@@ -7,6 +7,44 @@ use axum::{
 use crate::{models::{Result as SpeedTestResult, PersonalAccessToken}, db::Database, AppState};
 use serde::Deserialize;
 
+// Custom deserializer for checkbox arrays from HTML forms
+fn deserialize_abilities<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::{self, Visitor};
+    
+    struct AbilitiesVisitor;
+    
+    impl<'de> Visitor<'de> for AbilitiesVisitor {
+        type Value = Vec<String>;
+        
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("a string or sequence of strings")
+        }
+        
+        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(vec![value.to_string()])
+        }
+        
+        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        where
+            A: de::SeqAccess<'de>,
+        {
+            let mut vec = Vec::new();
+            while let Some(value) = seq.next_element()? {
+                vec.push(value);
+            }
+            Ok(vec)
+        }
+    }
+    
+    deserializer.deserialize_any(AbilitiesVisitor)
+}
+
 #[derive(Template)]
 #[template(path = "dashboard.html")]
 pub struct DashboardTemplate {
@@ -296,7 +334,7 @@ pub async fn api_tokens_page(
 #[derive(Deserialize)]
 pub struct CreateTokenForm {
     name: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_abilities")]
     abilities: Vec<String>,
 }
 
