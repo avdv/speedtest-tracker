@@ -503,3 +503,78 @@ Visit: http://localhost:8080/admin/api-tokens
 
 Click "Create New Token" and enjoy the smooth experience!
 
+
+---
+
+## 🔧 FIX: Token Hash Method Corrected
+
+### Issue Discovered
+
+The token hashing was using **MD5** instead of **SHA-256**, resulting in:
+- 32-character hash (MD5) vs 64-character hash (SHA-256)
+- Shorter tokens than Laravel Sanctum generates
+- Different hash format
+
+### Laravel Sanctum Standard
+
+Laravel Sanctum tokens follow this format:
+- **Plaintext:** 40 random alphanumeric characters
+- **Hash Method:** SHA-256
+- **Stored Hash:** 64 hexadecimal characters
+
+Example:
+```
+Plaintext:  "AbCdEfGhIjKlMnOpQrStUvWxYz1234567890AbCd"
+SHA-256:    "cdc09bdf51ef229bc548a83e8448a2d169b3876e8e084480ba0d4a8e82e17e50"
+```
+
+### Fix Applied
+
+**Dependencies Changed:**
+- ❌ Removed: `md5 = "0.7"`
+- ✅ Added: `sha2 = "0.10"` (SHA-256 implementation)
+- ✅ Added: `hex = "0.4"` (for hex encoding)
+
+**Code Changes:**
+```rust
+// Old (incorrect)
+let token: String = rand::thread_rng()
+    .sample_iter(&rand::distributions::Alphanumeric)
+    .take(64)  // ❌ Too long
+    .map(char::from)
+    .collect();
+let hashed = format!("{:x}", md5::compute(&token)); // ❌ MD5
+
+// New (correct)
+let token: String = rand::thread_rng()
+    .sample_iter(&rand::distributions::Alphanumeric)
+    .take(40)  // ✅ Matches Laravel
+    .map(char::from)
+    .collect();
+
+let mut hasher = Sha256::new();
+hasher.update(token.as_bytes());
+let hash_bytes = hasher.finalize();
+let hashed = hex::encode(hash_bytes); // ✅ SHA-256
+```
+
+### Result
+
+**Before:** 
+- Plaintext: 64 chars
+- Hash: 32 chars (MD5)
+
+**After:**
+- Plaintext: 40 chars ✅
+- Hash: 64 chars (SHA-256) ✅
+
+Now matches Laravel Sanctum token format exactly!
+
+### Verification
+
+You can verify the fix by:
+1. Creating a new token
+2. Checking the plaintext length (should be 40)
+3. Querying database: `SELECT length(token) FROM personal_access_tokens WHERE ...`
+4. Should return 64 (SHA-256 hash length)
+

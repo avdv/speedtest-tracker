@@ -305,16 +305,20 @@ pub async fn create_token(
     Form(form): Form<CreateTokenForm>,
 ) -> Response {
     use rand::Rng;
+    use sha2::{Sha256, Digest};
     
-    // Generate random token (plaintext)
+    // Generate random token (plaintext) - 40 characters like Laravel Sanctum
     let token: String = rand::thread_rng()
         .sample_iter(&rand::distributions::Alphanumeric)
-        .take(64)
+        .take(40)
         .map(char::from)
         .collect();
     
-    // Hash the token for storage
-    let hashed = format!("{:x}", md5::compute(&token));
+    // Hash the token using SHA-256 (same as Laravel Sanctum)
+    let mut hasher = Sha256::new();
+    hasher.update(token.as_bytes());
+    let hash_bytes = hasher.finalize();
+    let hashed = hex::encode(hash_bytes);
     
     // Convert abilities to JSON
     let abilities_json = serde_json::to_string(&form.abilities).unwrap_or_else(|_| "[]".to_string());
