@@ -240,19 +240,23 @@ pub struct ApiTokensTemplate {
     tokens: Vec<PersonalAccessToken>,
     message: Option<String>,
     new_token: Option<String>,
+    new_token_name: Option<String>,
 }
 
 pub async fn api_tokens_page(
     State(state): State<AppState>,
     Query(params): Query<std::collections::HashMap<String, String>>,
 ) -> ApiTokensTemplate {
-    let message = if params.contains_key("created") {
-        Some("Token created successfully!".to_string())
-    } else if params.contains_key("deleted") {
+    let message = if params.contains_key("deleted") {
         Some("Token deleted successfully!".to_string())
+    } else if params.contains_key("error") {
+        Some("An error occurred.".to_string())
     } else {
         None
     };
+
+    let new_token = params.get("token").map(|s| s.to_string());
+    let new_token_name = params.get("token_name").map(|s| s.to_string());
 
     let tokens = match &state.db {
         Database::Sqlite(pool) => {
@@ -284,13 +288,16 @@ pub async fn api_tokens_page(
     ApiTokensTemplate {
         tokens,
         message,
-        new_token: None,
+        new_token,
+        new_token_name,
     }
 }
 
 #[derive(Deserialize)]
 pub struct CreateTokenForm {
     name: String,
+    #[serde(default)]
+    abilities: Vec<String>,
 }
 
 pub async fn create_token(
@@ -299,7 +306,7 @@ pub async fn create_token(
 ) -> Response {
     use rand::Rng;
     
-    // Generate random token
+    // Generate random token (plaintext)
     let token: String = rand::thread_rng()
         .sample_iter(&rand::distributions::Alphanumeric)
         .take(64)
@@ -308,6 +315,9 @@ pub async fn create_token(
     
     // Hash the token for storage
     let hashed = format!("{:x}", md5::compute(&token));
+    
+    // Convert abilities to JSON
+    let abilities_json = serde_json::to_string(&form.abilities).unwrap_or_else(|_| "[]".to_string());
     
     let result = match &state.db {
         Database::Sqlite(pool) => {
@@ -326,7 +336,7 @@ pub async fn create_token(
             .bind(user_id)
             .bind(&form.name)
             .bind(&hashed)
-            .bind("[\"results:read\"]")
+            .bind(&abilities_json)
             .execute(pool)
             .await
         },
@@ -334,8 +344,13 @@ pub async fn create_token(
     };
 
     if result.is_ok() {
-        // TODO: Display the token to user (only shown once!)
-        Redirect::to("/admin/api-tokens?created=1").into_response()
+        // Redirect with token in query string to display it (only once!)
+        let redirect_url = format!(
+            "/admin/api-tokens?token={}&token_name={}",
+            urlencoding::encode(&token),
+            urlencoding::encode(&form.name)
+        );
+        Redirect::to(&redirect_url).into_response()
     } else {
         Redirect::to("/admin/api-tokens?error=1").into_response()
     }

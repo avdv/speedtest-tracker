@@ -396,3 +396,110 @@ Then visit:
 
 Each of these is 50-200 lines of code - straightforward to add!
 
+
+---
+
+## 🎉 UPDATE 2: Token Creation Enhanced!
+
+### What Was Improved
+
+**Modal Dialog for Token Creation**
+- Click "Create New Token" opens a modal dialog
+- Focused, distraction-free creation flow
+- Matches PHP/Filament behavior
+
+**Ability Selection**
+- Checkboxes for each ability:
+  - ✓ Read Results (view speedtest results via API)
+  - ✓ Run Speedtests (trigger new speedtests)
+  - ✓ List Servers (get available Ookla servers)
+- Each ability has a description
+- Visual feedback on selection
+
+**Token Display (One Time Only!)**
+- After creation, plaintext token is shown in green success box
+- Copy button with instant feedback
+- Warning: "Store this token securely. It won't be shown again."
+- Token name displayed for context
+
+**Improved Token List**
+- Abilities shown as colored badges
+- "Read Results", "Run Tests", "List Servers"
+- Better visual organization
+- Enhanced delete confirmation
+
+### User Flow
+
+1. Visit `/admin/api-tokens`
+2. Click "Create New Token"
+3. Modal opens with form
+4. Enter token name (e.g., "Homepage Dashboard")
+5. Select abilities (checkboxes)
+6. Click "Create Token"
+7. Modal closes, page reloads
+8. **Green box appears with plaintext token**
+9. Click "Copy Token" button
+10. Token copied to clipboard (✓ Copied! feedback)
+11. Store token securely
+12. Never shown again!
+
+### Technical Implementation
+
+**Frontend:**
+- Modal dialog with CSS overlay
+- JavaScript for show/hide/copy
+- Copy button with temporary success state
+- Checkbox form with multiple values
+
+**Backend:**
+- Abilities stored as JSON array: `["results:read", "speedtests:run"]`
+- Token generated (64 random characters)
+- MD5 hash stored in database
+- Plaintext token passed via URL parameter
+- URL encoding for safe transport
+
+**Security Note:**
+- Token shown via URL parameter (query string)
+- Only shown once, then discarded
+- For production internet use, consider POST-redirect-GET pattern
+- For internal/home use, current approach is fine
+
+### Code Stats
+
+**Added:**
+- Modal dialog HTML/CSS (~100 lines)
+- JavaScript for modal + copy (~40 lines)
+- Ability parsing in template (~10 lines)
+- URL encoding dependency
+
+**Modified:**
+- `create_token` handler (abilities support)
+- `api_tokens_page` (token display)
+- Template (full redesign with modal)
+
+**Total:** ~150 lines of changes
+
+### Comparison to PHP Version
+
+| Feature | PHP/Filament | Rust |
+|---------|-------------|------|
+| Modal dialog | ✅ | ✅ |
+| Ability checkboxes | ✅ | ✅ |
+| Ability descriptions | ✅ | ✅ |
+| Token display once | ✅ | ✅ |
+| Copy button | ✅ | ✅ |
+| Badge display | ✅ | ✅ |
+| Warning message | ✅ | ✅ |
+
+**Result:** Feature parity achieved! 🎉
+
+### Try It Now
+
+```bash
+PORT=8080 DATABASE_URL=sqlite:./database/database.sqlite cargo run --release
+```
+
+Visit: http://localhost:8080/admin/api-tokens
+
+Click "Create New Token" and enjoy the smooth experience!
+
