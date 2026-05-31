@@ -111,6 +111,159 @@ pub async fn dashboard(
 }
 
 #[derive(Template)]
+#[template(path = "admin.html")]
+pub struct AdminTemplate {
+    latest_result: Option<SpeedTestResult>,
+    stats: AdminStats,
+}
+
+pub struct AdminStats {
+    pub total_tests: i64,
+    pub avg_download: f64,
+    pub avg_upload: f64,
+    pub avg_ping: f64,
+}
+
+pub async fn admin_dashboard(State(state): State<AppState>) -> AdminTemplate {
+    let (latest_result, stats) = match &state.db {
+        Database::Sqlite(pool) => {
+            let latest = sqlx::query_as::<_, SpeedTestResult>(
+                "SELECT * FROM results ORDER BY created_at DESC LIMIT 1"
+            )
+            .fetch_optional(pool)
+            .await
+            .unwrap_or(None);
+            
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
+                .fetch_one(pool)
+                .await
+                .unwrap_or(0);
+            
+            let avg_download: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(download) FROM results WHERE download IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let avg_upload: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let avg_ping: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let stats = AdminStats {
+                total_tests: total,
+                avg_download: avg_download.unwrap_or(0.0) / 1_000_000.0,
+                avg_upload: avg_upload.unwrap_or(0.0) / 1_000_000.0,
+                avg_ping: avg_ping.unwrap_or(0.0),
+            };
+            
+            (latest, stats)
+        },
+        Database::MySql(pool) => {
+            let latest = sqlx::query_as::<_, SpeedTestResult>(
+                "SELECT * FROM results ORDER BY created_at DESC LIMIT 1"
+            )
+            .fetch_optional(pool)
+            .await
+            .unwrap_or(None);
+            
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
+                .fetch_one(pool)
+                .await
+                .unwrap_or(0);
+            
+            let avg_download: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(download) FROM results WHERE download IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let avg_upload: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let avg_ping: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let stats = AdminStats {
+                total_tests: total,
+                avg_download: avg_download.unwrap_or(0.0) / 1_000_000.0,
+                avg_upload: avg_upload.unwrap_or(0.0) / 1_000_000.0,
+                avg_ping: avg_ping.unwrap_or(0.0),
+            };
+            
+            (latest, stats)
+        },
+        Database::Postgres(pool) => {
+            let latest = sqlx::query_as::<_, SpeedTestResult>(
+                "SELECT * FROM results ORDER BY created_at DESC LIMIT 1"
+            )
+            .fetch_optional(pool)
+            .await
+            .unwrap_or(None);
+            
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
+                .fetch_one(pool)
+                .await
+                .unwrap_or(0);
+            
+            let avg_download: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(download) FROM results WHERE download IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let avg_upload: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let avg_ping: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let stats = AdminStats {
+                total_tests: total,
+                avg_download: avg_download.unwrap_or(0.0) / 1_000_000.0,
+                avg_upload: avg_upload.unwrap_or(0.0) / 1_000_000.0,
+                avg_ping: avg_ping.unwrap_or(0.0),
+            };
+            
+            (latest, stats)
+        },
+    };
+
+    AdminTemplate {
+        latest_result,
+        stats,
+    }
+}
+
+#[derive(Template)]
 #[template(path = "login.html")]
 pub struct LoginTemplate {
     error: Option<String>,
