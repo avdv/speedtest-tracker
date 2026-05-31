@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Speedtest Tracker - Dashboard</title>
+    <title>Dashboard - Speedtest Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -16,11 +17,52 @@
             color: white;
             padding: 1rem 2rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+        }
+        .nav {
+            display: flex;
+            gap: 1rem;
+        }
+        .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+        }
+        .nav a:hover, .nav a.active {
+            background: rgba(255,255,255,0.1);
         }
         .container {
             max-width: 1400px;
             margin: 2rem auto;
             padding: 0 2rem;
+        }
+        .time-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+        .time-selector a {
+            padding: 0.5rem 1.5rem;
+            background: white;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .time-selector a:hover {
+            background: #f3f4f6;
+        }
+        .time-selector a.active {
+            background: #2563eb;
+            color: white;
         }
         .stats {
             display: grid;
@@ -44,32 +86,68 @@
             font-weight: bold;
             color: #2563eb;
         }
-        .results-table {
+        .stat-unit {
+            font-size: 1rem;
+            color: #666;
+            font-weight: normal;
+        }
+        .chart-section {
             background: white;
+            padding: 2rem;
             border-radius: 8px;
-            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .chart-section h2 {
+            margin-bottom: 1.5rem;
+            color: #111;
+            font-size: 1.25rem;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 2rem;
+        }
+        .recent-tests {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .recent-tests h2 {
+            margin-bottom: 1.5rem;
+            color: #111;
+            font-size: 1.25rem;
         }
-        th {
-            background: #f9fafb;
-            padding: 1rem;
-            text-align: left;
-            font-weight: 600;
-            color: #374151;
-            border-bottom: 2px solid #e5e7eb;
-        }
-        td {
+        .test-item {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr) auto;
+            gap: 1rem;
             padding: 1rem;
             border-bottom: 1px solid #e5e7eb;
+            align-items: center;
         }
-        tr:hover {
-            background: #f9fafb;
+        .test-item:last-child {
+            border-bottom: none;
         }
-        .status {
+        .test-metric {
+            text-align: center;
+        }
+        .test-metric-label {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+        .test-metric-value {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111;
+        }
+        .test-date {
+            font-size: 0.875rem;
+            color: #666;
+        }
+        .status-badge {
             display: inline-block;
             padding: 0.25rem 0.75rem;
             border-radius: 9999px;
@@ -84,94 +162,220 @@
             background: #fee2e2;
             color: #991b1b;
         }
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-top: 2rem;
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
         }
-        .pagination a {
-            padding: 0.5rem 1rem;
-            background: white;
-            border-radius: 4px;
-            text-decoration: none;
+        .view-all {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        .view-all a {
             color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
         }
-        .pagination a:hover {
-            background: #2563eb;
-            color: white;
+        .view-all a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>🐇 Speedtest Tracker</h1>
-        <div style="display: flex; gap: 1rem;">
-            <a href="/" style="color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px;">Results</a>
-            <a href="/admin" style="color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px;">Dashboard</a>
-            <a href="/admin/profile" style="color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px;">Profile</a>
-            <a href="/admin/api-tokens" style="color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px;">API Tokens</a>
+        <div class="nav">
+            <a href="/" class="active">Dashboard</a>
+            <a href="/admin/results">Results</a>
+            <a href="/admin/profile">Profile</a>
+            <a href="/admin/api-tokens">API Tokens</a>
         </div>
     </div>
     
     <div class="container">
+        <div class="time-selector">
+            <a href="/?range=24h" class="{% if self.time_range == "24h" %}active{% endif %}">Last 24 Hours</a>
+            <a href="/?range=week" class="{% if self.time_range == "week" %}active{% endif %}">Last Week</a>
+            <a href="/?range=month" class="{% if self.time_range == "month" %}active{% endif %}">Last Month</a>
+        </div>
+
         <div class="stats">
-            {% if !self.results.is_empty() %}
-            <div class="stat-card">
-                <div class="stat-label">Latest Download</div>
-                <div class="stat-value">{{ format!("{:.2}", self.results[0].download_mbps()) }} Mbps</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Latest Upload</div>
-                <div class="stat-value">{{ format!("{:.2}", self.results[0].upload_mbps()) }} Mbps</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Latest Ping</div>
-                <div class="stat-value">{{ format!("{:.1}", self.results[0].ping.unwrap_or(0.0)) }} ms</div>
-            </div>
             <div class="stat-card">
                 <div class="stat-label">Total Tests</div>
-                <div class="stat-value">{{ self.results.len() }}</div>
+                <div class="stat-value">{{ self.stats.total_tests }}</div>
             </div>
-            {% endif %}
+            <div class="stat-card">
+                <div class="stat-label">Average Download</div>
+                <div class="stat-value">{{ format!("{:.2}", self.stats.avg_download) }} <span class="stat-unit">Mbps</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Average Upload</div>
+                <div class="stat-value">{{ format!("{:.2}", self.stats.avg_upload) }} <span class="stat-unit">Mbps</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Average Ping</div>
+                <div class="stat-value">{{ format!("{:.1}", self.stats.avg_ping) }} <span class="stat-unit">ms</span></div>
+            </div>
         </div>
 
-        <div class="results-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Download</th>
-                        <th>Upload</th>
-                        <th>Ping</th>
-                        <th>Status</th>
-                        <th>Type</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for result in self.results %}
-                    <tr>
-                        <td>{{ result.created_at.format("%Y-%m-%d %H:%M:%S") }}</td>
-                        <td>{{ format!("{:.2}", result.download_mbps()) }} Mbps</td>
-                        <td>{{ format!("{:.2}", result.upload_mbps()) }} Mbps</td>
-                        <td>{{ format!("{:.1}", result.ping.unwrap_or(0.0)) }} ms</td>
-                        <td>
-                            <span class="status status-{{ result.status.to_lowercase() }}">{{ result.status }}</span>
-                        </td>
-                        <td>{% if result.scheduled %}Scheduled{% else %}Manual{% endif %}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        {% if !self.stats.chart_data.is_empty() %}
+        <div class="chart-section">
+            <h2>📊 Speed Over Time</h2>
+            <div class="chart-container">
+                <canvas id="speedChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="pingChart"></canvas>
+            </div>
         </div>
+        {% endif %}
 
-        <div class="pagination">
-            {% if self.page > 1 %}
-            <a href="/?page={{ self.page - 1 }}&per_page={{ self.per_page }}">← Previous</a>
+        <div class="recent-tests">
+            <h2>📋 Latest Tests</h2>
+            {% if !self.latest_results.is_empty() %}
+                {% for result in self.latest_results %}
+                <div class="test-item">
+                    <div class="test-metric">
+                        <div class="test-metric-label">Download</div>
+                        <div class="test-metric-value">{{ format!("{:.1}", result.download_mbps()) }} Mbps</div>
+                    </div>
+                    <div class="test-metric">
+                        <div class="test-metric-label">Upload</div>
+                        <div class="test-metric-value">{{ format!("{:.1}", result.upload_mbps()) }} Mbps</div>
+                    </div>
+                    <div class="test-metric">
+                        <div class="test-metric-label">Ping</div>
+                        <div class="test-metric-value">{{ format!("{:.1}", result.ping.unwrap_or(0.0)) }} ms</div>
+                    </div>
+                    <div class="test-date">
+                        {{ result.created_at.format("%Y-%m-%d %H:%M") }}
+                    </div>
+                    <div>
+                        <span class="status-badge status-{{ result.status.to_lowercase() }}">{{ result.status }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <p>No speed test results yet.</p>
+                </div>
             {% endif %}
-            <span>Page {{ self.page }}</span>
-            <a href="/?page={{ self.page + 1 }}&per_page={{ self.per_page }}">Next →</a>
+            
+            <div class="view-all">
+                <a href="/admin/results">View All Results →</a>
+            </div>
         </div>
     </div>
+
+    {% if !self.stats.chart_data.is_empty() %}
+    <script>
+        const chartData = [
+            {% for point in self.stats.chart_data %}
+            {
+                timestamp: "{{ point.timestamp }}",
+                download: {{ point.download }},
+                upload: {{ point.upload }},
+                ping: {{ point.ping }}
+            }{% if !loop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        const labels = chartData.map(d => d.timestamp);
+        const downloads = chartData.map(d => d.download);
+        const uploads = chartData.map(d => d.upload);
+        const pings = chartData.map(d => d.ping);
+
+        // Speed Chart
+        const speedCtx = document.getElementById('speedChart').getContext('2d');
+        new Chart(speedCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Download (Mbps)',
+                        data: downloads,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Upload (Mbps)',
+                        data: uploads,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Download & Upload Speed'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Speed (Mbps)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Ping Chart
+        const pingCtx = document.getElementById('pingChart').getContext('2d');
+        new Chart(pingCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Ping (ms)',
+                        data: pings,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Latency (Ping)'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Latency (ms)'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+    {% endif %}
 </body>
 </html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Results - Speedtest Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        .header {
+            background: #2563eb;
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .stat-label {
+            color: #666;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2563eb;
+        }
+        .results-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            background: #f9fafb;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        tr:hover {
+            background: #f9fafb;
+        }
+        .status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status-failed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+        .pagination a {
+            padding: 0.5rem 1rem;
+            background: white;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #2563eb;
+        }
+        .pagination a:hover {
+            background: #2563eb;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🐇 Speedtest Tracker</h1>
+        <div style="display: flex; gap: 1rem;">
+            <a href="/" style="color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px;">Dashboard</a>
+            <a href="/admin/results" style="color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; background: rgba(255,255,255,0.1);">Results</a>
+            <a href="/admin/profile" style="color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px;">Profile</a>
+            <a href="/admin/api-tokens" style="color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px;">API Tokens</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="stats">
+            {% if !self.results.is_empty() %}
+            <div class="stat-card">
+                <div class="stat-label">Latest Download</div>
+                <div class="stat-value">{{ format!("{:.2}", self.results[0].download_mbps()) }} Mbps</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Latest Upload</div>
+                <div class="stat-value">{{ format!("{:.2}", self.results[0].upload_mbps()) }} Mbps</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Latest Ping</div>
+                <div class="stat-value">{{ format!("{:.1}", self.results[0].ping.unwrap_or(0.0)) }} ms</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Tests</div>
+                <div class="stat-value">{{ self.results.len() }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="results-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Download</th>
+                        <th>Upload</th>
+                        <th>Ping</th>
+                        <th>Status</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in self.results %}
+                    <tr>
+                        <td>{{ result.created_at.format("%Y-%m-%d %H:%M:%S") }}</td>
+                        <td>{{ format!("{:.2}", result.download_mbps()) }} Mbps</td>
+                        <td>{{ format!("{:.2}", result.upload_mbps()) }} Mbps</td>
+                        <td>{{ format!("{:.1}", result.ping.unwrap_or(0.0)) }} ms</td>
+                        <td>
+                            <span class="status status-{{ result.status.to_lowercase() }}">{{ result.status }}</span>
+                        </td>
+                        <td>{% if result.scheduled %}Scheduled{% else %}Manual{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            {% if self.page > 1 %}
+            <a href="/admin/results?page={{ self.page - 1 }}&per_page={{ self.per_page }}">← Previous</a>
+            {% endif %}
+            <span>Page {{ self.page }}</span>
+            <a href="/admin/results?page={{ self.page + 1 }}&per_page={{ self.per_page }}">Next →</a>
+        </div>
+    </div>
+</body>
+</html>

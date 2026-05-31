@@ -46,8 +46,8 @@ where
 }
 
 #[derive(Template)]
-#[template(path = "dashboard.html")]
-pub struct DashboardTemplate {
+#[template(path = "results.html")]
+pub struct ResultsListTemplate {
     results: Vec<SpeedTestResult>,
     page: i64,
     per_page: i64,
@@ -64,10 +64,10 @@ pub struct Pagination {
 fn default_page() -> i64 { 1 }
 fn default_per_page() -> i64 { 25 }
 
-pub async fn dashboard(
+pub async fn results_list(
     State(state): State<AppState>,
     Query(params): Query<Pagination>,
-) -> DashboardTemplate {
+) -> ResultsListTemplate {
     let offset = (params.page - 1) * params.per_page;
     
     let results = match &state.db {
@@ -103,7 +103,7 @@ pub async fn dashboard(
         },
     };
 
-    DashboardTemplate {
+    ResultsListTemplate {
         results,
         page: params.page,
         per_page: params.per_page,
@@ -111,155 +111,255 @@ pub async fn dashboard(
 }
 
 #[derive(Template)]
-#[template(path = "admin.html")]
-pub struct AdminTemplate {
-    latest_result: Option<SpeedTestResult>,
-    stats: AdminStats,
+#[template(path = "dashboard.html")]
+pub struct HomeDashboardTemplate {
+    latest_results: Vec<SpeedTestResult>,
+    stats: DashboardStats,
+    time_range: String,
 }
 
-pub struct AdminStats {
+pub struct DashboardStats {
     pub total_tests: i64,
     pub avg_download: f64,
     pub avg_upload: f64,
     pub avg_ping: f64,
+    pub chart_data: Vec<ChartDataPoint>,
 }
 
-pub async fn admin_dashboard(State(state): State<AppState>) -> AdminTemplate {
-    let (latest_result, stats) = match &state.db {
+pub struct ChartDataPoint {
+    pub timestamp: String,
+    pub download: f64,
+    pub upload: f64,
+    pub ping: f64,
+}
+
+#[derive(Deserialize)]
+pub struct TimeRangeQuery {
+    #[serde(default = "default_time_range")]
+    range: String,
+}
+
+fn default_time_range() -> String { "24h".to_string() }
+
+pub async fn home_dashboard(
+    State(state): State<AppState>,
+    Query(params): Query<TimeRangeQuery>,
+) -> HomeDashboardTemplate {
+    let hours = match params.range.as_str() {
+        "week" => 24 * 7,
+        "month" => 24 * 30,
+        _ => 24, // default to 24h
+    };
+    
+    let (latest_results, stats) = match &state.db {
         Database::Sqlite(pool) => {
             let latest = sqlx::query_as::<_, SpeedTestResult>(
-                "SELECT * FROM results ORDER BY created_at DESC LIMIT 1"
+                "SELECT * FROM results ORDER BY created_at DESC LIMIT 5"
             )
-            .fetch_optional(pool)
+            .fetch_all(pool)
             .await
-            .unwrap_or(None);
+            .unwrap_or_default();
             
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
-                .fetch_one(pool)
+            let time_filter = format!("datetime('now', '-{} hours')", hours);
+            let query = format!(
+                "SELECT * FROM results WHERE created_at >= {} ORDER BY created_at ASC",
+                time_filter
+            );
+            
+            let chart_results: Vec<SpeedTestResult> = sqlx::query_as(&query)
+                .fetch_all(pool)
                 .await
-                .unwrap_or(0);
+                .unwrap_or_default();
             
-            let avg_download: Option<f64> = sqlx::query_scalar(
-                "SELECT AVG(download) FROM results WHERE download IS NOT NULL"
-            )
+            let total: i64 = sqlx::query_scalar(&format!(
+                "SELECT COUNT(*) FROM results WHERE created_at >= {}",
+                time_filter
+            ))
+            .fetch_one(pool)
+            .await
+            .unwrap_or(0);
+            
+            let avg_download: Option<f64> = sqlx::query_scalar(&format!(
+                "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= {}",
+                time_filter
+            ))
             .fetch_one(pool)
             .await
             .ok();
             
-            let avg_upload: Option<f64> = sqlx::query_scalar(
-                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL"
-            )
+            let avg_upload: Option<f64> = sqlx::query_scalar(&format!(
+                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= {}",
+                time_filter
+            ))
             .fetch_one(pool)
             .await
             .ok();
             
-            let avg_ping: Option<f64> = sqlx::query_scalar(
-                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL"
-            )
+            let avg_ping: Option<f64> = sqlx::query_scalar(&format!(
+                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= {}",
+                time_filter
+            ))
             .fetch_one(pool)
             .await
             .ok();
             
-            let stats = AdminStats {
+            let chart_data = chart_results.iter().map(|r| ChartDataPoint {
+                timestamp: r.created_at.format("%Y-%m-%d %H:%M").to_string(),
+                download: r.download_mbps(),
+                upload: r.upload_mbps(),
+                ping: r.ping.unwrap_or(0.0),
+            }).collect();
+            
+            let stats = DashboardStats {
                 total_tests: total,
                 avg_download: avg_download.unwrap_or(0.0) / 1_000_000.0,
                 avg_upload: avg_upload.unwrap_or(0.0) / 1_000_000.0,
                 avg_ping: avg_ping.unwrap_or(0.0),
+                chart_data,
             };
             
             (latest, stats)
         },
         Database::MySql(pool) => {
             let latest = sqlx::query_as::<_, SpeedTestResult>(
-                "SELECT * FROM results ORDER BY created_at DESC LIMIT 1"
+                "SELECT * FROM results ORDER BY created_at DESC LIMIT 5"
             )
-            .fetch_optional(pool)
+            .fetch_all(pool)
             .await
-            .unwrap_or(None);
+            .unwrap_or_default();
             
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
-                .fetch_one(pool)
+            let query = format!(
+                "SELECT * FROM results WHERE created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR) ORDER BY created_at ASC",
+                hours
+            );
+            
+            let chart_results: Vec<SpeedTestResult> = sqlx::query_as(&query)
+                .fetch_all(pool)
                 .await
-                .unwrap_or(0);
+                .unwrap_or_default();
             
-            let avg_download: Option<f64> = sqlx::query_scalar(
-                "SELECT AVG(download) FROM results WHERE download IS NOT NULL"
-            )
+            let total: i64 = sqlx::query_scalar(&format!(
+                "SELECT COUNT(*) FROM results WHERE created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR)",
+                hours
+            ))
+            .fetch_one(pool)
+            .await
+            .unwrap_or(0);
+            
+            let avg_download: Option<f64> = sqlx::query_scalar(&format!(
+                "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR)",
+                hours
+            ))
             .fetch_one(pool)
             .await
             .ok();
             
-            let avg_upload: Option<f64> = sqlx::query_scalar(
-                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL"
-            )
+            let avg_upload: Option<f64> = sqlx::query_scalar(&format!(
+                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR)",
+                hours
+            ))
             .fetch_one(pool)
             .await
             .ok();
             
-            let avg_ping: Option<f64> = sqlx::query_scalar(
-                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL"
-            )
+            let avg_ping: Option<f64> = sqlx::query_scalar(&format!(
+                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR)",
+                hours
+            ))
             .fetch_one(pool)
             .await
             .ok();
             
-            let stats = AdminStats {
+            let chart_data = chart_results.iter().map(|r| ChartDataPoint {
+                timestamp: r.created_at.format("%Y-%m-%d %H:%M").to_string(),
+                download: r.download_mbps(),
+                upload: r.upload_mbps(),
+                ping: r.ping.unwrap_or(0.0),
+            }).collect();
+            
+            let stats = DashboardStats {
                 total_tests: total,
                 avg_download: avg_download.unwrap_or(0.0) / 1_000_000.0,
                 avg_upload: avg_upload.unwrap_or(0.0) / 1_000_000.0,
                 avg_ping: avg_ping.unwrap_or(0.0),
+                chart_data,
             };
             
             (latest, stats)
         },
         Database::Postgres(pool) => {
             let latest = sqlx::query_as::<_, SpeedTestResult>(
-                "SELECT * FROM results ORDER BY created_at DESC LIMIT 1"
+                "SELECT * FROM results ORDER BY created_at DESC LIMIT 5"
             )
-            .fetch_optional(pool)
+            .fetch_all(pool)
             .await
-            .unwrap_or(None);
+            .unwrap_or_default();
             
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
-                .fetch_one(pool)
+            let query = format!(
+                "SELECT * FROM results WHERE created_at >= NOW() - INTERVAL '{} hours' ORDER BY created_at ASC",
+                hours
+            );
+            
+            let chart_results: Vec<SpeedTestResult> = sqlx::query_as(&query)
+                .fetch_all(pool)
                 .await
-                .unwrap_or(0);
+                .unwrap_or_default();
             
-            let avg_download: Option<f64> = sqlx::query_scalar(
-                "SELECT AVG(download) FROM results WHERE download IS NOT NULL"
-            )
+            let total: i64 = sqlx::query_scalar(&format!(
+                "SELECT COUNT(*) FROM results WHERE created_at >= NOW() - INTERVAL '{} hours'",
+                hours
+            ))
+            .fetch_one(pool)
+            .await
+            .unwrap_or(0);
+            
+            let avg_download: Option<f64> = sqlx::query_scalar(&format!(
+                "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= NOW() - INTERVAL '{} hours'",
+                hours
+            ))
             .fetch_one(pool)
             .await
             .ok();
             
-            let avg_upload: Option<f64> = sqlx::query_scalar(
-                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL"
-            )
+            let avg_upload: Option<f64> = sqlx::query_scalar(&format!(
+                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= NOW() - INTERVAL '{} hours'",
+                hours
+            ))
             .fetch_one(pool)
             .await
             .ok();
             
-            let avg_ping: Option<f64> = sqlx::query_scalar(
-                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL"
-            )
+            let avg_ping: Option<f64> = sqlx::query_scalar(&format!(
+                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= NOW() - INTERVAL '{} hours'",
+                hours
+            ))
             .fetch_one(pool)
             .await
             .ok();
             
-            let stats = AdminStats {
+            let chart_data = chart_results.iter().map(|r| ChartDataPoint {
+                timestamp: r.created_at.format("%Y-%m-%d %H:%M").to_string(),
+                download: r.download_mbps(),
+                upload: r.upload_mbps(),
+                ping: r.ping.unwrap_or(0.0),
+            }).collect();
+            
+            let stats = DashboardStats {
                 total_tests: total,
                 avg_download: avg_download.unwrap_or(0.0) / 1_000_000.0,
                 avg_upload: avg_upload.unwrap_or(0.0) / 1_000_000.0,
                 avg_ping: avg_ping.unwrap_or(0.0),
+                chart_data,
             };
             
             (latest, stats)
         },
     };
 
-    AdminTemplate {
-        latest_result,
+    HomeDashboardTemplate {
+        latest_results,
         stats,
+        time_range: params.range,
     }
 }
 

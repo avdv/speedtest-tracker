@@ -30,8 +30,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let state = AppState { db };
 
     let app = Router::new()
-        .route("/", get(handlers::dashboard))
-        .route("/admin", get(handlers::admin_dashboard))
+        .route("/", get(handlers::home_dashboard))
+        .route("/admin/results", get(handlers::results_list))
         .route("/login", get(handlers::login_page))
         .route("/login", post(handlers::login_post))
         .route("/admin/profile", get(handlers::profile_page))
