@@ -218,8 +218,8 @@ pub async fn home_dashboard(
             
             let stats = DashboardStats {
                 total_tests: total,
-                avg_download: avg_download.unwrap_or(0.0) / 1_000_000.0,
-                avg_upload: avg_upload.unwrap_or(0.0) / 1_000_000.0,
+                avg_download: avg_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                avg_upload: avg_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
                 avg_ping: avg_ping.unwrap_or(0.0),
                 chart_data,
             };
@@ -288,8 +288,8 @@ pub async fn home_dashboard(
             
             let stats = DashboardStats {
                 total_tests: total,
-                avg_download: avg_download.unwrap_or(0.0) / 1_000_000.0,
-                avg_upload: avg_upload.unwrap_or(0.0) / 1_000_000.0,
+                avg_download: avg_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                avg_upload: avg_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
                 avg_ping: avg_ping.unwrap_or(0.0),
                 chart_data,
             };
@@ -358,8 +358,8 @@ pub async fn home_dashboard(
             
             let stats = DashboardStats {
                 total_tests: total,
-                avg_download: avg_download.unwrap_or(0.0) / 1_000_000.0,
-                avg_upload: avg_upload.unwrap_or(0.0) / 1_000_000.0,
+                avg_download: avg_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                avg_upload: avg_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
                 avg_ping: avg_ping.unwrap_or(0.0),
                 chart_data,
             };

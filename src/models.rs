@@ -67,10 +67,12 @@ pub struct PersonalAccessToken {
 
 impl Result {
     pub fn download_mbps(&self) -> f64 {
-        self.download.unwrap_or(0) as f64 / 1_000_000.0
+        // Database stores bytes/second, multiply by 8 to get bits/second, then divide by 1M for Mbps
+        self.download.unwrap_or(0) as f64 * 8.0 / 1_000_000.0
     }
 
     pub fn upload_mbps(&self) -> f64 {
-        self.upload.unwrap_or(0) as f64 / 1_000_000.0
+        // Database stores bytes/second, multiply by 8 to get bits/second, then divide by 1M for Mbps
+        self.upload.unwrap_or(0) as f64 * 8.0 / 1_000_000.0
     }
 }

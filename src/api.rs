@@ -449,14 +449,14 @@ pub async fn get_stats(State(state): State<AppState>) -> Json<ApiResponse<StatsR
             StatsResponse {
                 total_results: total,
                 avg_ping: avg_ping.unwrap_or(0.0),
-                avg_download: avg_download.unwrap_or(0.0) / 1_000_000.0,
-                avg_upload: avg_upload.unwrap_or(0.0) / 1_000_000.0,
+                avg_download: avg_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                avg_upload: avg_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
                 min_ping: min_ping.unwrap_or(0.0),
-                min_download: min_download.unwrap_or(0.0) / 1_000_000.0,
-                min_upload: min_upload.unwrap_or(0.0) / 1_000_000.0,
+                min_download: min_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                min_upload: min_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
                 max_ping: max_ping.unwrap_or(0.0),
-                max_download: max_download.unwrap_or(0.0) / 1_000_000.0,
-                max_upload: max_upload.unwrap_or(0.0) / 1_000_000.0,
+                max_download: max_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                max_upload: max_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
             }
         },
         Database::MySql(pool) => {
@@ -513,14 +513,14 @@ pub async fn get_stats(State(state): State<AppState>) -> Json<ApiResponse<StatsR
             StatsResponse {
                 total_results: total,
                 avg_ping: avg_ping.unwrap_or(0.0),
-                avg_download: avg_download.unwrap_or(0.0) / 1_000_000.0,
-                avg_upload: avg_upload.unwrap_or(0.0) / 1_000_000.0,
+                avg_download: avg_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                avg_upload: avg_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
                 min_ping: min_ping.unwrap_or(0.0),
-                min_download: min_download.unwrap_or(0.0) / 1_000_000.0,
-                min_upload: min_upload.unwrap_or(0.0) / 1_000_000.0,
+                min_download: min_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                min_upload: min_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
                 max_ping: max_ping.unwrap_or(0.0),
-                max_download: max_download.unwrap_or(0.0) / 1_000_000.0,
-                max_upload: max_upload.unwrap_or(0.0) / 1_000_000.0,
+                max_download: max_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                max_upload: max_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
             }
         },
         Database::Postgres(pool) => {
@@ -577,14 +577,14 @@ pub async fn get_stats(State(state): State<AppState>) -> Json<ApiResponse<StatsR
             StatsResponse {
                 total_results: total,
                 avg_ping: avg_ping.unwrap_or(0.0),
-                avg_download: avg_download.unwrap_or(0.0) / 1_000_000.0,
-                avg_upload: avg_upload.unwrap_or(0.0) / 1_000_000.0,
+                avg_download: avg_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                avg_upload: avg_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
                 min_ping: min_ping.unwrap_or(0.0),
-                min_download: min_download.unwrap_or(0.0) / 1_000_000.0,
-                min_upload: min_upload.unwrap_or(0.0) / 1_000_000.0,
+                min_download: min_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                min_upload: min_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
                 max_ping: max_ping.unwrap_or(0.0),
-                max_download: max_download.unwrap_or(0.0) / 1_000_000.0,
-                max_upload: max_upload.unwrap_or(0.0) / 1_000_000.0,
+                max_download: max_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                max_upload: max_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
             }
         },
     };
