@@ -625,3 +625,97 @@ pub async fn fetch_ookla_servers() -> Result<Vec<OoklaServer>, Box<dyn std::erro
     
     Ok(mapped_servers)
 }
+
+// POST /api/v1/speedtests/run
+#[derive(Deserialize)]
+pub struct RunSpeedtestRequest {
+    server_id: Option<i64>,
+}
+
+pub async fn run_speedtest_api(
+    State(state): State<AppState>,
+    Json(payload): Json<RunSpeedtestRequest>,
+) -> impl IntoResponse {
+    tracing::info!("API speedtest requested with server_id: {:?}", payload.server_id);
+    
+    // Run speedtest
+    let result = match crate::speedtest::run_speedtest(payload.server_id).await {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::error!("Speedtest execution failed: {}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<()> {
+                    data: None,
+                    message: format!("Speedtest failed: {}", e),
+                })
+            ).into_response();
+        }
+    };
+    
+    // Save to database
+    let result_id = match crate::speedtest::save_result(&state.db, result, false).await {
+        Ok(id) => id,
+        Err(e) => {
+            tracing::error!("Failed to save speedtest result: {}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<()> {
+                    data: None,
+                    message: format!("Test completed but failed to save: {}", e),
+                })
+            ).into_response();
+        }
+    };
+    
+    // Fetch the saved result to return
+    let saved_result = match &state.db {
+        Database::Sqlite(pool) => {
+            sqlx::query_as::<_, SpeedTestResult>(
+                "SELECT * FROM results WHERE id = ?"
+            )
+            .bind(result_id)
+            .fetch_one(pool)
+            .await
+        }
+        Database::MySql(pool) => {
+            sqlx::query_as::<_, SpeedTestResult>(
+                "SELECT * FROM results WHERE id = ?"
+            )
+            .bind(result_id)
+            .fetch_one(pool)
+            .await
+        }
+        Database::Postgres(pool) => {
+            sqlx::query_as::<_, SpeedTestResult>(
+                "SELECT * FROM results WHERE id = $1"
+            )
+            .bind(result_id)
+            .fetch_one(pool)
+            .await
+        }
+    };
+    
+    match saved_result {
+        Ok(result) => {
+            tracing::info!("Speedtest completed and saved with id: {}", result_id);
+            (
+                StatusCode::CREATED,
+                Json(ApiResponse {
+                    data: Some(ResultResponse::from(result)),
+                    message: "Speedtest completed successfully".to_string(),
+                })
+            ).into_response()
+        }
+        Err(e) => {
+            tracing::error!("Failed to fetch saved result: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<()> {
+                    data: None,
+                    message: format!("Test saved but failed to retrieve: {}", e),
+                })
+            ).into_response()
+        }
+    }
+}

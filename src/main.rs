@@ -72,6 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/results/:id", get(api::get_result))
         .route("/stats", get(api::get_stats))
         .route("/ookla/list-servers", get(api::list_ookla_servers))
+        .route("/speedtests/run", post(api::run_speedtest_api))
         .layer(middleware::from_fn_with_state(state.clone(), auth::require_auth));
 
     let app = Router::new()

@@ -212,6 +212,53 @@ Get a list of available Ookla speedtest servers.
 }
 ```
 
+### Run Speedtest
+```bash
+POST /api/v1/speedtests/run
+```
+Execute a speedtest and save the result to the database.
+
+**Request Body:**
+```json
+{
+  "server_id": 12345  // Optional: specific Ookla server ID
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "data": {
+    "id": 123,
+    "service": "ookla",
+    "ping": 12.5,
+    "download": 100000000,
+    "upload": 50000000,
+    "status": "completed",
+    "scheduled": false,
+    "healthy": true,
+    "download_bits": 800000000,
+    "upload_bits": 400000000,
+    "download_bytes": 100000000,
+    "upload_bytes": 50000000,
+    "download_bits_human": "800 Mbps",
+    "upload_bits_human": "400 Mbps",
+    "download_bytes_human": "100 MB/s",
+    "upload_bytes_human": "50 MB/s",
+    "created_at": "2026-06-01T15:30:00Z",
+    "updated_at": "2026-06-01T15:30:00Z"
+  },
+  "message": "Speedtest completed successfully"
+}
+```
+
+**Error Response (500 Internal Server Error):**
+```json
+{
+  "message": "Speedtest failed: speedtest command not found"
+}
+```
+
 ## Testing
 
 Start the server:
@@ -246,6 +293,20 @@ curl -H "Authorization: Bearer YOUR_API_TOKEN" \
 # List Ookla servers (requires auth)
 curl -H "Authorization: Bearer YOUR_API_TOKEN" \
   http://localhost:3000/api/v1/ookla/list-servers
+
+# Run speedtest (requires auth)
+curl -X POST \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"server_id": 12345}' \
+  http://localhost:3000/api/v1/speedtests/run
+
+# Run speedtest with auto-selected server (requires auth)
+curl -X POST \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{}' \
+  http://localhost:3000/api/v1/speedtests/run
 ```
 
 ## Notes
