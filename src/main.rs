@@ -1,6 +1,7 @@
 mod db;
 mod handlers;
 mod models;
+mod api;
 
 use axum::{
     routing::{get, post},
@@ -39,6 +40,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/admin/api-tokens", get(handlers::api_tokens_page))
         .route("/admin/api-tokens/create", post(handlers::create_token))
         .route("/admin/api-tokens/delete", post(handlers::delete_token))
+        // API routes
+        .route("/api/healthcheck", get(api::healthcheck))
+        .route("/api/speedtest/latest", get(api::legacy_latest))
+        .route("/api/v1/results", get(api::list_results))
+        .route("/api/v1/results/latest", get(api::latest_result))
+        .route("/api/v1/results/:id", get(api::get_result))
+        .route("/api/v1/stats", get(api::get_stats))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 
