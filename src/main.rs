@@ -3,6 +3,7 @@ mod db;
 mod handlers;
 mod models;
 mod api;
+mod session;
 
 use axum::{
     routing::{get, post},
@@ -10,6 +11,8 @@ use axum::{
     middleware,
 };
 use tower_http::trace::TraceLayer;
+use tower_sessions::{SessionManagerLayer, Expiry};
+use tower_sessions_sqlx_store::SqliteStore;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[derive(Clone)]
@@ -30,9 +33,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .init();
 
     let db = db::Database::connect().await?;
-    let state = AppState { db };
+    let state = AppState { db: db.clone() };
 
-    // API v1 routes requiring authentication
+    // Set up session store
+    let session_store = match &db {
+        db::Database::Sqlite(pool) => {
+            SqliteStore::new(pool.clone())
+        }
+        _ => panic!("Only SQLite is supported for sessions currently"),
+    };
+    
+    session_store.migrate().await?;
+    
+    let session_layer = SessionManagerLayer::new(session_store)
+        .with_secure(false) // Set to true in production with HTTPS
+        .with_expiry(Expiry::OnInactivity(time::Duration::hours(24)));
+
+    // Admin routes requiring session authentication
+    let admin_routes = Router::new()
+        .route("/admin/results", get(handlers::results_list))
+        .route("/admin/profile", get(handlers::profile_page))
+        .route("/admin/profile", post(handlers::profile_update))
+        .route("/admin/api-tokens", get(handlers::api_tokens_page))
+        .route("/admin/api-tokens/create", post(handlers::create_token))
+        .route("/admin/api-tokens/delete", post(handlers::delete_token))
+        .layer(middleware::from_fn(session::require_session));
+
+    // API v1 routes requiring token authentication
     let api_v1_routes = Router::new()
         .route("/results", get(api::list_results))
         .route("/results/latest", get(api::latest_result))
@@ -43,19 +70,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app = Router::new()
         .route("/", get(handlers::home_dashboard))
-        .route("/admin/results", get(handlers::results_list))
+        .merge(admin_routes)
         .route("/login", get(handlers::login_page))
         .route("/login", post(handlers::login_post))
-        .route("/admin/profile", get(handlers::profile_page))
-        .route("/admin/profile", post(handlers::profile_update))
-        .route("/admin/api-tokens", get(handlers::api_tokens_page))
-        .route("/admin/api-tokens/create", post(handlers::create_token))
-        .route("/admin/api-tokens/delete", post(handlers::delete_token))
+        .route("/logout", get(handlers::logout))
         // Public API routes
         .route("/api/healthcheck", get(api::healthcheck))
         .route("/api/speedtest/latest", get(api::legacy_latest))
         // Protected API v1 routes
         .nest("/api/v1", api_v1_routes)
+        .layer(session_layer)
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 

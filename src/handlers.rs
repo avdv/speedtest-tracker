@@ -355,8 +355,11 @@ pub struct LoginForm {
 
 pub async fn login_post(
     State(state): State<AppState>,
+    session: tower_sessions::Session,
     Form(form): Form<LoginForm>,
 ) -> Response {
+    tracing::debug!("Login attempt for email: {}", form.email);
+    
     let user = match &state.db {
         Database::Sqlite(pool) => {
             sqlx::query_as::<_, crate::models::User>(
@@ -365,6 +368,10 @@ pub async fn login_post(
             .bind(&form.email)
             .fetch_optional(pool)
             .await
+            .map_err(|e| {
+                tracing::error!("Database query error during login: {}", e);
+                e
+            })
             .ok()
             .flatten()
         },
@@ -375,6 +382,10 @@ pub async fn login_post(
             .bind(&form.email)
             .fetch_optional(pool)
             .await
+            .map_err(|e| {
+                tracing::error!("Database query error during login: {}", e);
+                e
+            })
             .ok()
             .flatten()
         },
@@ -385,15 +396,43 @@ pub async fn login_post(
             .bind(&form.email)
             .fetch_optional(pool)
             .await
+            .map_err(|e| {
+                tracing::error!("Database query error during login: {}", e);
+                e
+            })
             .ok()
             .flatten()
         },
     };
 
     if let Some(user) = user {
-        if bcrypt::verify(&form.password, &user.password).unwrap_or(false) {
-            return Redirect::to("/").into_response();
+        tracing::debug!("User found, verifying password");
+        match bcrypt::verify(&form.password, &user.password) {
+            Ok(true) => {
+                tracing::debug!("Password verified, creating session");
+                // Set session
+                if let Err(e) = crate::session::set_user_session(session, user.id).await {
+                    tracing::error!("Failed to set session: {}", e);
+                    return LoginTemplate {
+                        error: Some(format!("Login failed - session error: {}", e)),
+                    }.into_response();
+                }
+                tracing::info!("User {} logged in successfully, attempting redirect", user.email);
+                
+                // Try different redirect approaches
+                let response = Redirect::to("/");
+                tracing::debug!("Redirect response created");
+                return response.into_response();
+            }
+            Ok(false) => {
+                tracing::debug!("Password verification failed");
+            }
+            Err(e) => {
+                tracing::error!("Password verification error: {}", e);
+            }
         }
+    } else {
+        tracing::debug!("User not found");
     }
 
     LoginTemplate {
@@ -410,33 +449,41 @@ pub struct ProfileTemplate {
 
 pub async fn profile_page(
     State(state): State<AppState>,
-) -> ProfileTemplate {
-    // TODO: Get actual logged-in user from session
-    // For now, get first admin user as placeholder
+    session: tower_sessions::Session,
+) -> Response {
+    // Get logged-in user from session
+    let user_id = match crate::session::get_user_id(session).await {
+        Some(id) => id,
+        None => return Redirect::to("/login").into_response(),
+    };
+    
     let user = match &state.db {
         Database::Sqlite(pool) => {
-            sqlx::query_as::<_, crate::models::User>("SELECT * FROM users WHERE role = 'admin' LIMIT 1")
-                .fetch_one(pool)
+            sqlx::query_as::<_, crate::models::User>("SELECT * FROM users WHERE id = ?")
+                .bind(user_id)
+                .fetch_optional(pool)
                 .await
-                .unwrap()
         },
         Database::MySql(pool) => {
-            sqlx::query_as::<_, crate::models::User>("SELECT * FROM users WHERE role = 'admin' LIMIT 1")
-                .fetch_one(pool)
+            sqlx::query_as::<_, crate::models::User>("SELECT * FROM users WHERE id = ?")
+                .bind(user_id)
+                .fetch_optional(pool)
                 .await
-                .unwrap()
         },
         Database::Postgres(pool) => {
-            sqlx::query_as::<_, crate::models::User>("SELECT * FROM users WHERE role = 'admin' LIMIT 1")
-                .fetch_one(pool)
+            sqlx::query_as::<_, crate::models::User>("SELECT * FROM users WHERE id = $1")
+                .bind(user_id)
+                .fetch_optional(pool)
                 .await
-                .unwrap()
         },
     };
 
-    ProfileTemplate {
-        user,
-        message: None,
+    match user {
+        Ok(Some(user)) => ProfileTemplate {
+            user,
+            message: None,
+        }.into_response(),
+        _ => Redirect::to("/login").into_response(),
     }
 }
 
@@ -676,4 +723,13 @@ pub async fn delete_token(
     } else {
         Redirect::to("/admin/api-tokens?error=1").into_response()
     }
+}
+
+pub async fn logout(
+    session: tower_sessions::Session,
+) -> Response {
+    if let Err(e) = crate::session::clear_session(session).await {
+        tracing::error!("Failed to clear session: {}", e);
+    }
+    Redirect::to("/login").into_response()
 }

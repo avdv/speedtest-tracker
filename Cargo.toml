@@ -7,7 +7,7 @@ default-run = "speedtest-admin"
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 axum = { version = "0.7", features = ["macros"] }
-axum-extra = { version = "0.9", features = ["typed-header"] }
+axum-extra = { version = "0.9", features = ["typed-header", "cookie", "cookie-private"] }
 tower = "0.4"
 tower-http = { version = "0.5", features = ["fs", "trace", "cors"] }
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "mysql", "postgres", "chrono"] }
@@ -25,6 +25,9 @@ rand = "0.8"
 sha2 = "0.10"
 hex = "0.4"
 urlencoding = "2.1"
+time = "0.3"
+tower-sessions = "0.13"
+tower-sessions-sqlx-store = { version = "0.14", features = ["sqlite"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 
 [profile.release]
