@@ -47,6 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/v1/results/latest", get(api::latest_result))
         .route("/api/v1/results/:id", get(api::get_result))
         .route("/api/v1/stats", get(api::get_stats))
+        .route("/api/v1/ookla/list-servers", get(api::list_ookla_servers))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 

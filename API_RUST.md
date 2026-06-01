@@ -143,6 +143,28 @@ Get aggregated statistics for all speedtest results.
 }
 ```
 
+### List Ookla Servers
+```bash
+GET /api/v1/ookla/list-servers
+```
+Get a list of available Ookla speedtest servers.
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": 12345,
+      "host": "speedtest.example.com",
+      "name": "Example ISP",
+      "location": "New York, NY",
+      "country": "United States"
+    }
+  ],
+  "message": "Speedtest servers fetched successfully."
+}
+```
+
 ## Testing
 
 Start the server:
@@ -169,6 +191,9 @@ curl http://localhost:3000/api/v1/results/1
 
 # Get statistics
 curl http://localhost:3000/api/v1/stats
+
+# List Ookla servers
+curl http://localhost:3000/api/v1/ookla/list-servers
 ```
 
 ## Notes

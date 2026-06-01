@@ -594,3 +594,72 @@ pub async fn get_stats(State(state): State<AppState>) -> Json<ApiResponse<StatsR
         message: "Success".to_string(),
     })
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct OoklaServer {
+    pub id: String,
+    pub host: String,
+    pub name: String,
+    pub location: String,
+    pub country: String,
+}
+
+#[derive(Deserialize)]
+struct OoklaApiServer {
+    id: String,
+    host: Option<String>,
+    sponsor: Option<String>,
+    name: Option<String>,
+    country: Option<String>,
+}
+
+// GET /api/v1/ookla/list-servers
+pub async fn list_ookla_servers() -> impl IntoResponse {
+    match fetch_ookla_servers().await {
+        Ok(servers) => {
+            let response = ApiResponse {
+                data: Some(servers),
+                message: "Speedtest servers fetched successfully.".to_string(),
+            };
+            (StatusCode::OK, Json(response))
+        },
+        Err(e) => {
+            tracing::error!("Unable to retrieve Ookla servers: {}", e);
+            let response: ApiResponse<Vec<OoklaServer>> = ApiResponse {
+                data: Some(vec![]),
+                message: "Unable to retrieve Ookla servers, check internet connection and see logs.".to_string(),
+            };
+            (StatusCode::OK, Json(response))
+        }
+    }
+}
+
+async fn fetch_ookla_servers() -> Result<Vec<OoklaServer>, Box<dyn std::error::Error>> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()?;
+    
+    let response = client
+        .get("https://www.speedtest.net/api/js/servers")
+        .query(&[
+            ("engine", "js"),
+            ("https_functional", "true"),
+            ("limit", "20"),
+        ])
+        .send()
+        .await?;
+    
+    let servers: Vec<OoklaApiServer> = response.json().await?;
+    
+    let mapped_servers = servers.into_iter()
+        .map(|s| OoklaServer {
+            id: s.id,
+            host: s.host.unwrap_or_else(|| "Unknown".to_string()),
+            name: s.sponsor.unwrap_or_else(|| "Unknown".to_string()),
+            location: s.name.unwrap_or_else(|| "Unknown".to_string()),
+            country: s.country.unwrap_or_else(|| "Unknown".to_string()),
+        })
+        .collect();
+    
+    Ok(mapped_servers)
+}
