@@ -3,6 +3,9 @@ set -e
 
 echo "Building Speedtest Tracker Admin for armv7..."
 
+# Ensure cargo is in PATH
+export PATH="$HOME/.cargo/bin:$PATH"
+
 # Check if cross is installed
 if ! command -v cross &> /dev/null; then
     echo "Installing cross for easy cross-compilation..."
@@ -11,7 +14,7 @@ fi
 
 # Build for armv7
 echo "Building release binary..."
-cross build --release --target armv7-unknown-linux-gnueabihf
+cross build --release --target armv7-unknown-linux-musleabihf
 
 # Show binary info
 BINARY="target/armv7-unknown-linux-gnueabihf/release/speedtest-admin"
