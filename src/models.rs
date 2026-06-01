@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
@@ -13,8 +13,31 @@ pub struct Result {
     pub data: Option<String>,
     pub status: String,
     pub scheduled: bool,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    #[serde(with = "naive_datetime_as_utc")]
+    pub created_at: NaiveDateTime,
+    #[serde(with = "naive_datetime_as_utc")]
+    pub updated_at: NaiveDateTime,
+}
+
+mod naive_datetime_as_utc {
+    use chrono::NaiveDateTime;
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(date: &NaiveDateTime, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&date.format("%Y-%m-%d %H:%M:%S").to_string())
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S")
+            .map_err(serde::de::Error::custom)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
@@ -24,8 +47,8 @@ pub struct User {
     pub email: String,
     pub password: String,
     pub role: String,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
@@ -36,10 +59,10 @@ pub struct PersonalAccessToken {
     pub name: String,
     pub token: String,
     pub abilities: Option<String>,
-    pub last_used_at: Option<DateTime<Utc>>,
-    pub expires_at: Option<DateTime<Utc>>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub last_used_at: Option<NaiveDateTime>,
+    pub expires_at: Option<NaiveDateTime>,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
 }
 
 impl Result {

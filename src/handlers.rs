@@ -145,11 +145,15 @@ pub async fn home_dashboard(
     State(state): State<AppState>,
     Query(params): Query<TimeRangeQuery>,
 ) -> HomeDashboardTemplate {
-    let hours = match params.range.as_str() {
+    let hours_ago = match params.range.as_str() {
         "week" => 24 * 7,
         "month" => 24 * 30,
         _ => 24, // default to 24h
     };
+    
+    // Use local time since database stores timestamps in local timezone
+    let time_cutoff = (chrono::Local::now() - chrono::Duration::hours(hours_ago))
+        .naive_local();
     
     let (latest_results, stats) = match &state.db {
         Database::Sqlite(pool) => {
@@ -160,45 +164,47 @@ pub async fn home_dashboard(
             .await
             .unwrap_or_default();
             
-            let time_filter = format!("datetime('now', '-{} hours')", hours);
-            let query = format!(
-                "SELECT * FROM results WHERE created_at >= {} AND status = 'completed' ORDER BY created_at ASC",
-                time_filter
-            );
+            let chart_results: Vec<SpeedTestResult> = sqlx::query_as(
+                "SELECT * FROM results WHERE created_at >= ? AND status = ? ORDER BY created_at ASC"
+            )
+            .bind(time_cutoff)
+            .bind("completed")
+            .fetch_all(pool)
+            .await
+            .unwrap_or_default();
             
-            let chart_results: Vec<SpeedTestResult> = sqlx::query_as(&query)
-                .fetch_all(pool)
-                .await
-                .unwrap_or_default();
-            
-            let total: i64 = sqlx::query_scalar(&format!(
-                "SELECT COUNT(*) FROM results WHERE created_at >= {} AND status = 'completed'",
-                time_filter
-            ))
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM results WHERE created_at >= ? AND status = ?"
+            )
+            .bind(time_cutoff)
+            .bind("completed")
             .fetch_one(pool)
             .await
             .unwrap_or(0);
             
-            let avg_download: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= {} AND status = 'completed'",
-                time_filter
-            ))
+            let avg_download: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= ? AND status = ?"
+            )
+            .bind(time_cutoff)
+            .bind("completed")
             .fetch_one(pool)
             .await
             .ok();
             
-            let avg_upload: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= {} AND status = 'completed'",
-                time_filter
-            ))
+            let avg_upload: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= ? AND status = ?"
+            )
+            .bind(time_cutoff)
+            .bind("completed")
             .fetch_one(pool)
             .await
             .ok();
             
-            let avg_ping: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= {} AND status = 'completed'",
-                time_filter
-            ))
+            let avg_ping: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= ? AND status = ?"
+            )
+            .bind(time_cutoff)
+            .bind("completed")
             .fetch_one(pool)
             .await
             .ok();
@@ -228,44 +234,47 @@ pub async fn home_dashboard(
             .await
             .unwrap_or_default();
             
-            let query = format!(
-                "SELECT * FROM results WHERE created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR) AND status = 'completed' ORDER BY created_at ASC",
-                hours
-            );
+            let chart_results: Vec<SpeedTestResult> = sqlx::query_as(
+                "SELECT * FROM results WHERE created_at >= ? AND status = ? ORDER BY created_at ASC"
+            )
+            .bind(time_cutoff)
+            .bind("completed")
+            .fetch_all(pool)
+            .await
+            .unwrap_or_default();
             
-            let chart_results: Vec<SpeedTestResult> = sqlx::query_as(&query)
-                .fetch_all(pool)
-                .await
-                .unwrap_or_default();
-            
-            let total: i64 = sqlx::query_scalar(&format!(
-                "SELECT COUNT(*) FROM results WHERE created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR) AND status = 'completed'",
-                hours
-            ))
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM results WHERE created_at >= ? AND status = ?"
+            )
+            .bind(time_cutoff)
+            .bind("completed")
             .fetch_one(pool)
             .await
             .unwrap_or(0);
             
-            let avg_download: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR) AND status = 'completed'",
-                hours
-            ))
+            let avg_download: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= ? AND status = ?"
+            )
+            .bind(time_cutoff)
+            .bind("completed")
             .fetch_one(pool)
             .await
             .ok();
             
-            let avg_upload: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR) AND status = 'completed'",
-                hours
-            ))
+            let avg_upload: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= ? AND status = ?"
+            )
+            .bind(time_cutoff)
+            .bind("completed")
             .fetch_one(pool)
             .await
             .ok();
             
-            let avg_ping: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR) AND status = 'completed'",
-                hours
-            ))
+            let avg_ping: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= ? AND status = ?"
+            )
+            .bind(time_cutoff)
+            .bind("completed")
             .fetch_one(pool)
             .await
             .ok();
@@ -295,44 +304,47 @@ pub async fn home_dashboard(
             .await
             .unwrap_or_default();
             
-            let query = format!(
-                "SELECT * FROM results WHERE created_at >= NOW() - INTERVAL '{} hours' AND status = 'completed' ORDER BY created_at ASC",
-                hours
-            );
+            let chart_results: Vec<SpeedTestResult> = sqlx::query_as(
+                "SELECT * FROM results WHERE created_at >= $1 AND status = $2 ORDER BY created_at ASC"
+            )
+            .bind(time_cutoff)
+            .bind("completed")
+            .fetch_all(pool)
+            .await
+            .unwrap_or_default();
             
-            let chart_results: Vec<SpeedTestResult> = sqlx::query_as(&query)
-                .fetch_all(pool)
-                .await
-                .unwrap_or_default();
-            
-            let total: i64 = sqlx::query_scalar(&format!(
-                "SELECT COUNT(*) FROM results WHERE created_at >= NOW() - INTERVAL '{} hours' AND status = 'completed'",
-                hours
-            ))
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM results WHERE created_at >= $1 AND status = $2"
+            )
+            .bind(time_cutoff)
+            .bind("completed")
             .fetch_one(pool)
             .await
             .unwrap_or(0);
             
-            let avg_download: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= NOW() - INTERVAL '{} hours' AND status = 'completed'",
-                hours
-            ))
+            let avg_download: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= $1 AND status = $2"
+            )
+            .bind(time_cutoff)
+            .bind("completed")
             .fetch_one(pool)
             .await
             .ok();
             
-            let avg_upload: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= NOW() - INTERVAL '{} hours' AND status = 'completed'",
-                hours
-            ))
+            let avg_upload: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= $1 AND status = $2"
+            )
+            .bind(time_cutoff)
+            .bind("completed")
             .fetch_one(pool)
             .await
             .ok();
             
-            let avg_ping: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= NOW() - INTERVAL '{} hours' AND status = 'completed'",
-                hours
-            ))
+            let avg_ping: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= $1 AND status = $2"
+            )
+            .bind(time_cutoff)
+            .bind("completed")
             .fetch_one(pool)
             .await
             .ok();
@@ -359,7 +371,7 @@ pub async fn home_dashboard(
     HomeDashboardTemplate {
         latest_results,
         stats,
-        time_range: params.range,
+        time_range: params.range.clone(),
     }
 }
 
