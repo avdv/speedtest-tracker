@@ -392,199 +392,180 @@ pub struct StatsResponse {
     pub max_upload: f64,
 }
 
+#[derive(sqlx::FromRow, Debug)]
+struct StatsRow {
+    total_results: i64,
+    avg_ping: Option<f64>,
+    avg_download: Option<f64>,
+    avg_upload: Option<f64>,
+    min_ping: Option<f64>,
+    min_download: Option<f64>,
+    min_upload: Option<f64>,
+    max_ping: Option<f64>,
+    max_download: Option<f64>,
+    max_upload: Option<f64>,
+}
+
 // GET /api/v1/stats
 pub async fn get_stats(State(state): State<AppState>) -> Json<ApiResponse<StatsResponse>> {
     let stats = match &state.db {
         Database::Sqlite(pool) => {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
-                .fetch_one(pool)
-                .await
-                .unwrap_or(0);
+            let row_result = sqlx::query_as::<_, StatsRow>(
+                "SELECT 
+                    COUNT(*) as total_results,
+                    AVG(ping) as avg_ping,
+                    AVG(download) as avg_download,
+                    AVG(upload) as avg_upload,
+                    CAST(MIN(ping) AS REAL) as min_ping,
+                    CAST(MIN(download) AS REAL) as min_download,
+                    CAST(MIN(upload) AS REAL) as min_upload,
+                    CAST(MAX(ping) AS REAL) as max_ping,
+                    CAST(MAX(download) AS REAL) as max_download,
+                    CAST(MAX(upload) AS REAL) as max_upload
+                FROM results"
+            )
+            .fetch_one(pool)
+            .await;
             
-            let avg_ping: Option<f64> = sqlx::query_scalar("SELECT AVG(ping) FROM results WHERE ping IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let avg_download: Option<f64> = sqlx::query_scalar("SELECT AVG(download) FROM results WHERE download IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let avg_upload: Option<f64> = sqlx::query_scalar("SELECT AVG(upload) FROM results WHERE upload IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let min_ping: Option<f64> = sqlx::query_scalar("SELECT MIN(ping) FROM results WHERE ping IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let min_download: Option<f64> = sqlx::query_scalar("SELECT MIN(download) FROM results WHERE download IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let min_upload: Option<f64> = sqlx::query_scalar("SELECT MIN(upload) FROM results WHERE upload IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let max_ping: Option<f64> = sqlx::query_scalar("SELECT MAX(ping) FROM results WHERE ping IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let max_download: Option<f64> = sqlx::query_scalar("SELECT MAX(download) FROM results WHERE download IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let max_upload: Option<f64> = sqlx::query_scalar("SELECT MAX(upload) FROM results WHERE upload IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
+            let row = match row_result {
+                Ok(r) => {
+                    tracing::debug!("Stats query successful: total={}, avg_download={:?}", r.total_results, r.avg_download);
+                    r
+                },
+                Err(e) => {
+                    tracing::error!("Stats query failed: {}", e);
+                    StatsRow {
+                        total_results: 0,
+                        avg_ping: None,
+                        avg_download: None,
+                        avg_upload: None,
+                        min_ping: None,
+                        min_download: None,
+                        min_upload: None,
+                        max_ping: None,
+                        max_download: None,
+                        max_upload: None,
+                    }
+                }
+            };
             
             StatsResponse {
-                total_results: total,
-                avg_ping: avg_ping.unwrap_or(0.0),
-                avg_download: avg_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-                avg_upload: avg_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-                min_ping: min_ping.unwrap_or(0.0),
-                min_download: min_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-                min_upload: min_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-                max_ping: max_ping.unwrap_or(0.0),
-                max_download: max_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-                max_upload: max_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                total_results: row.total_results,
+                avg_ping: row.avg_ping.unwrap_or(0.0),
+                avg_download: row.avg_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                avg_upload: row.avg_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                min_ping: row.min_ping.unwrap_or(0.0),
+                min_download: row.min_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                min_upload: row.min_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                max_ping: row.max_ping.unwrap_or(0.0),
+                max_download: row.max_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                max_upload: row.max_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
             }
         },
         Database::MySql(pool) => {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
-                .fetch_one(pool)
-                .await
-                .unwrap_or(0);
+            let row_result = sqlx::query_as::<_, StatsRow>(
+                "SELECT 
+                    COUNT(*) as total_results,
+                    AVG(ping) as avg_ping,
+                    AVG(download) as avg_download,
+                    AVG(upload) as avg_upload,
+                    CAST(MIN(ping) AS DECIMAL(10,2)) as min_ping,
+                    CAST(MIN(download) AS DECIMAL(20,2)) as min_download,
+                    CAST(MIN(upload) AS DECIMAL(20,2)) as min_upload,
+                    CAST(MAX(ping) AS DECIMAL(10,2)) as max_ping,
+                    CAST(MAX(download) AS DECIMAL(20,2)) as max_download,
+                    CAST(MAX(upload) AS DECIMAL(20,2)) as max_upload
+                FROM results"
+            )
+            .fetch_one(pool)
+            .await;
             
-            let avg_ping: Option<f64> = sqlx::query_scalar("SELECT AVG(ping) FROM results WHERE ping IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let avg_download: Option<f64> = sqlx::query_scalar("SELECT AVG(download) FROM results WHERE download IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let avg_upload: Option<f64> = sqlx::query_scalar("SELECT AVG(upload) FROM results WHERE upload IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let min_ping: Option<f64> = sqlx::query_scalar("SELECT MIN(ping) FROM results WHERE ping IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let min_download: Option<f64> = sqlx::query_scalar("SELECT MIN(download) FROM results WHERE download IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let min_upload: Option<f64> = sqlx::query_scalar("SELECT MIN(upload) FROM results WHERE upload IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let max_ping: Option<f64> = sqlx::query_scalar("SELECT MAX(ping) FROM results WHERE ping IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let max_download: Option<f64> = sqlx::query_scalar("SELECT MAX(download) FROM results WHERE download IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let max_upload: Option<f64> = sqlx::query_scalar("SELECT MAX(upload) FROM results WHERE upload IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
+            let row = match row_result {
+                Ok(r) => {
+                    tracing::debug!("Stats query successful: total={}, avg_download={:?}", r.total_results, r.avg_download);
+                    r
+                },
+                Err(e) => {
+                    tracing::error!("Stats query failed: {}", e);
+                    StatsRow {
+                        total_results: 0,
+                        avg_ping: None,
+                        avg_download: None,
+                        avg_upload: None,
+                        min_ping: None,
+                        min_download: None,
+                        min_upload: None,
+                        max_ping: None,
+                        max_download: None,
+                        max_upload: None,
+                    }
+                }
+            };
             
             StatsResponse {
-                total_results: total,
-                avg_ping: avg_ping.unwrap_or(0.0),
-                avg_download: avg_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-                avg_upload: avg_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-                min_ping: min_ping.unwrap_or(0.0),
-                min_download: min_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-                min_upload: min_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-                max_ping: max_ping.unwrap_or(0.0),
-                max_download: max_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-                max_upload: max_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                total_results: row.total_results,
+                avg_ping: row.avg_ping.unwrap_or(0.0),
+                avg_download: row.avg_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                avg_upload: row.avg_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                min_ping: row.min_ping.unwrap_or(0.0),
+                min_download: row.min_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                min_upload: row.min_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                max_ping: row.max_ping.unwrap_or(0.0),
+                max_download: row.max_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                max_upload: row.max_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
             }
         },
         Database::Postgres(pool) => {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
-                .fetch_one(pool)
-                .await
-                .unwrap_or(0);
+            let row_result = sqlx::query_as::<_, StatsRow>(
+                "SELECT 
+                    COUNT(*) as total_results,
+                    AVG(ping) as avg_ping,
+                    AVG(download) as avg_download,
+                    AVG(upload) as avg_upload,
+                    CAST(MIN(ping) AS DOUBLE PRECISION) as min_ping,
+                    CAST(MIN(download) AS DOUBLE PRECISION) as min_download,
+                    CAST(MIN(upload) AS DOUBLE PRECISION) as min_upload,
+                    CAST(MAX(ping) AS DOUBLE PRECISION) as max_ping,
+                    CAST(MAX(download) AS DOUBLE PRECISION) as max_download,
+                    CAST(MAX(upload) AS DOUBLE PRECISION) as max_upload
+                FROM results"
+            )
+            .fetch_one(pool)
+            .await;
             
-            let avg_ping: Option<f64> = sqlx::query_scalar("SELECT AVG(ping) FROM results WHERE ping IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let avg_download: Option<f64> = sqlx::query_scalar("SELECT AVG(download) FROM results WHERE download IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let avg_upload: Option<f64> = sqlx::query_scalar("SELECT AVG(upload) FROM results WHERE upload IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let min_ping: Option<f64> = sqlx::query_scalar("SELECT MIN(ping) FROM results WHERE ping IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let min_download: Option<f64> = sqlx::query_scalar("SELECT MIN(download) FROM results WHERE download IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let min_upload: Option<f64> = sqlx::query_scalar("SELECT MIN(upload) FROM results WHERE upload IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let max_ping: Option<f64> = sqlx::query_scalar("SELECT MAX(ping) FROM results WHERE ping IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let max_download: Option<f64> = sqlx::query_scalar("SELECT MAX(download) FROM results WHERE download IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
-            
-            let max_upload: Option<f64> = sqlx::query_scalar("SELECT MAX(upload) FROM results WHERE upload IS NOT NULL")
-                .fetch_one(pool)
-                .await
-                .ok();
+            let row = match row_result {
+                Ok(r) => {
+                    tracing::debug!("Stats query successful: total={}, avg_download={:?}", r.total_results, r.avg_download);
+                    r
+                },
+                Err(e) => {
+                    tracing::error!("Stats query failed: {}", e);
+                    StatsRow {
+                        total_results: 0,
+                        avg_ping: None,
+                        avg_download: None,
+                        avg_upload: None,
+                        min_ping: None,
+                        min_download: None,
+                        min_upload: None,
+                        max_ping: None,
+                        max_download: None,
+                        max_upload: None,
+                    }
+                }
+            };
             
             StatsResponse {
-                total_results: total,
-                avg_ping: avg_ping.unwrap_or(0.0),
-                avg_download: avg_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-                avg_upload: avg_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-                min_ping: min_ping.unwrap_or(0.0),
-                min_download: min_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-                min_upload: min_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-                max_ping: max_ping.unwrap_or(0.0),
-                max_download: max_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-                max_upload: max_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                total_results: row.total_results,
+                avg_ping: row.avg_ping.unwrap_or(0.0),
+                avg_download: row.avg_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                avg_upload: row.avg_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                min_ping: row.min_ping.unwrap_or(0.0),
+                min_download: row.min_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                min_upload: row.min_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                max_ping: row.max_ping.unwrap_or(0.0),
+                max_download: row.max_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                max_upload: row.max_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
             }
         },
     };
