@@ -38,6 +38,35 @@ Backwards compatible endpoint for Homepage and Organizr dashboards.
 
 ## API v1 Endpoints
 
+**Authentication Required:** All API v1 endpoints require a valid Bearer token in the Authorization header.
+
+### Authentication
+
+API v1 endpoints use Laravel Sanctum-compatible token authentication. Include your API token in the Authorization header:
+
+```bash
+Authorization: Bearer YOUR_API_TOKEN
+```
+
+**Creating an API Token:**
+1. Log in to the web interface
+2. Navigate to `/admin/api-tokens`
+3. Create a new token with the required abilities
+4. Copy the generated token (shown only once!)
+
+**Example Request:**
+```bash
+curl -H "Authorization: Bearer YOUR_API_TOKEN" \
+  http://localhost:3000/api/v1/results
+```
+
+**Unauthorized Response:**
+```json
+{
+  "message": "Unauthenticated."
+}
+```
+
 ### List Results
 ```bash
 GET /api/v1/results?page=1&per_page=25
@@ -128,18 +157,36 @@ Get aggregated statistics for all speedtest results.
 ```json
 {
   "data": {
-    "total_results": 100,
-    "avg_ping": 12.5,
-    "avg_download": 150.5,
-    "avg_upload": 75.2,
-    "min_ping": 8.0,
-    "min_download": 50.0,
-    "min_upload": 20.0,
-    "max_ping": 25.0,
-    "max_download": 300.0,
-    "max_upload": 150.0
+    "download": {
+      "avg": 23071216,
+      "avg_bits": 184569725,
+      "avg_bits_human": "184.57 Mbps",
+      "max": 24506775,
+      "max_bits": 196054200,
+      "max_bits_human": "196.05 Mbps",
+      "min": 3493746,
+      "min_bits": 27949968,
+      "min_bits_human": "27.95 Mbps"
+    },
+    "ping": {
+      "avg": 17.65,
+      "max": 133.93,
+      "min": 3.37
+    },
+    "total_results": 2422,
+    "upload": {
+      "avg": 4756434,
+      "avg_bits": 38051473,
+      "avg_bits_human": "38.05 Mbps",
+      "max": 4971944,
+      "max_bits": 39775552,
+      "max_bits_human": "39.78 Mbps",
+      "min": 986955,
+      "min_bits": 7895640,
+      "min_bits_human": "7.90 Mbps"
+    }
   },
-  "message": "Success"
+  "message": "ok"
 }
 ```
 
@@ -174,31 +221,40 @@ cargo run
 
 Test endpoints:
 ```bash
-# Health check
+# Health check (public)
 curl http://localhost:3000/api/healthcheck
 
-# Get latest result (legacy)
+# Get latest result (legacy, public)
 curl http://localhost:3000/api/speedtest/latest
 
-# List results
-curl http://localhost:3000/api/v1/results
+# List results (requires auth)
+curl -H "Authorization: Bearer YOUR_API_TOKEN" \
+  http://localhost:3000/api/v1/results
 
-# Get latest result
-curl http://localhost:3000/api/v1/results/latest
+# Get latest result (requires auth)
+curl -H "Authorization: Bearer YOUR_API_TOKEN" \
+  http://localhost:3000/api/v1/results/latest
 
-# Get specific result
-curl http://localhost:3000/api/v1/results/1
+# Get specific result (requires auth)
+curl -H "Authorization: Bearer YOUR_API_TOKEN" \
+  http://localhost:3000/api/v1/results/1
 
-# Get statistics
-curl http://localhost:3000/api/v1/stats
+# Get statistics (requires auth)
+curl -H "Authorization: Bearer YOUR_API_TOKEN" \
+  http://localhost:3000/api/v1/stats
 
-# List Ookla servers
-curl http://localhost:3000/api/v1/ookla/list-servers
+# List Ookla servers (requires auth)
+curl -H "Authorization: Bearer YOUR_API_TOKEN" \
+  http://localhost:3000/api/v1/ookla/list-servers
 ```
 
 ## Notes
 
 - All download/upload values in Mbps for legacy endpoint
 - Download/upload in bytes for v1 endpoints (matching PHP version)
-- No authentication implemented yet (TODO: add Sanctum token validation)
+- **Authentication:** API v1 endpoints require Bearer token authentication using Laravel Sanctum-compatible tokens
+- Token validation uses SHA-256 hashing (same as PHP Sanctum implementation)
+- Tokens are validated against the `personal_access_tokens` table
+- Token expiration and last_used_at tracking is supported
+- Public endpoints: `/api/healthcheck` and `/api/speedtest/latest`
 - Filtering and sorting not yet implemented (TODO)

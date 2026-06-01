@@ -1,3 +1,4 @@
+mod auth;
 mod db;
 mod handlers;
 mod models;
@@ -6,6 +7,7 @@ mod api;
 use axum::{
     routing::{get, post},
     Router,
+    middleware,
 };
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -30,6 +32,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db = db::Database::connect().await?;
     let state = AppState { db };
 
+    // API v1 routes requiring authentication
+    let api_v1_routes = Router::new()
+        .route("/results", get(api::list_results))
+        .route("/results/latest", get(api::latest_result))
+        .route("/results/:id", get(api::get_result))
+        .route("/stats", get(api::get_stats))
+        .route("/ookla/list-servers", get(api::list_ookla_servers))
+        .layer(middleware::from_fn_with_state(state.clone(), auth::require_auth));
+
     let app = Router::new()
         .route("/", get(handlers::home_dashboard))
         .route("/admin/results", get(handlers::results_list))
@@ -40,14 +51,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/admin/api-tokens", get(handlers::api_tokens_page))
         .route("/admin/api-tokens/create", post(handlers::create_token))
         .route("/admin/api-tokens/delete", post(handlers::delete_token))
-        // API routes
+        // Public API routes
         .route("/api/healthcheck", get(api::healthcheck))
         .route("/api/speedtest/latest", get(api::legacy_latest))
-        .route("/api/v1/results", get(api::list_results))
-        .route("/api/v1/results/latest", get(api::latest_result))
-        .route("/api/v1/results/:id", get(api::get_result))
-        .route("/api/v1/stats", get(api::get_stats))
-        .route("/api/v1/ookla/list-servers", get(api::list_ookla_servers))
+        // Protected API v1 routes
+        .nest("/api/v1", api_v1_routes)
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 
