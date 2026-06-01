@@ -35,3 +35,7 @@ strip = true
 lto = true
 codegen-units = 1
 opt-level = "z"
+
+[dev-dependencies]
+axum-test = "14"
+tokio-test = "0.4"
