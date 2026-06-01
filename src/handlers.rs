@@ -7,44 +7,6 @@ use axum::{
 use crate::{models::{Result as SpeedTestResult, PersonalAccessToken}, db::Database, AppState};
 use serde::Deserialize;
 
-// Custom deserializer for checkbox arrays from HTML forms
-fn deserialize_abilities<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    use serde::de::{self, Visitor};
-    
-    struct AbilitiesVisitor;
-    
-    impl<'de> Visitor<'de> for AbilitiesVisitor {
-        type Value = Vec<String>;
-        
-        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-            formatter.write_str("a string or sequence of strings")
-        }
-        
-        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-        where
-            E: de::Error,
-        {
-            Ok(vec![value.to_string()])
-        }
-        
-        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-        where
-            A: de::SeqAccess<'de>,
-        {
-            let mut vec = Vec::new();
-            while let Some(value) = seq.next_element()? {
-                vec.push(value);
-            }
-            Ok(vec)
-        }
-    }
-    
-    deserializer.deserialize_any(AbilitiesVisitor)
-}
-
 #[derive(Template)]
 #[template(path = "results.html")]
 pub struct ResultsListTemplate {
@@ -596,19 +558,32 @@ pub async fn api_tokens_page(
     }
 }
 
-#[derive(Deserialize)]
-pub struct CreateTokenForm {
-    name: String,
-    #[serde(default, deserialize_with = "deserialize_abilities")]
-    abilities: Vec<String>,
-}
-
 pub async fn create_token(
     State(state): State<AppState>,
-    Form(form): Form<CreateTokenForm>,
+    body: String,
 ) -> Response {
     use rand::Rng;
     use sha2::{Sha256, Digest};
+    
+    // Parse form manually to handle duplicate keys
+    let mut name = String::new();
+    let mut abilities: Vec<String> = Vec::new();
+    
+    for pair in body.split('&') {
+        if let Some((key, value)) = pair.split_once('=') {
+            let decoded_value = urlencoding::decode(value).unwrap_or_default();
+            match key {
+                "name" => name = decoded_value.to_string(),
+                "abilities" => abilities.push(decoded_value.to_string()),
+                _ => {}
+            }
+        }
+    }
+    
+    // Default to results:read if no abilities selected
+    if abilities.is_empty() {
+        abilities.push("results:read".to_string());
+    }
     
     // Generate random token (plaintext) - 40 characters like Laravel Sanctum
     let token: String = rand::thread_rng()
@@ -624,7 +599,7 @@ pub async fn create_token(
     let hashed = hex::encode(hash_bytes);
     
     // Convert abilities to JSON
-    let abilities_json = serde_json::to_string(&form.abilities).unwrap_or_else(|_| "[]".to_string());
+    let abilities_json = serde_json::to_string(&abilities).unwrap_or_else(|_| "[]".to_string());
     
     let result = match &state.db {
         Database::Sqlite(pool) => {
@@ -641,7 +616,7 @@ pub async fn create_token(
             )
             .bind("App\\Models\\User")
             .bind(user_id)
-            .bind(&form.name)
+            .bind(&name)
             .bind(&hashed)
             .bind(&abilities_json)
             .execute(pool)
@@ -655,7 +630,7 @@ pub async fn create_token(
         let redirect_url = format!(
             "/admin/api-tokens?token={}&token_name={}",
             urlencoding::encode(&token),
-            urlencoding::encode(&form.name)
+            urlencoding::encode(&name)
         );
         Redirect::to(&redirect_url).into_response()
     } else {
