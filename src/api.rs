@@ -596,7 +596,7 @@ pub async fn list_ookla_servers() -> impl IntoResponse {
     }
 }
 
-async fn fetch_ookla_servers() -> Result<Vec<OoklaServer>, Box<dyn std::error::Error>> {
+pub async fn fetch_ookla_servers() -> Result<Vec<OoklaServer>, Box<dyn std::error::Error>> {
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
         .build()?;
