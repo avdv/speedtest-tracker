@@ -381,15 +381,42 @@ pub async fn get_result(
 #[derive(Serialize)]
 pub struct StatsResponse {
     pub total_results: i64,
-    pub avg_ping: f64,
-    pub avg_download: f64,
-    pub avg_upload: f64,
-    pub min_ping: f64,
-    pub min_download: f64,
-    pub min_upload: f64,
-    pub max_ping: f64,
-    pub max_download: f64,
-    pub max_upload: f64,
+    pub download: DownloadStats,
+    pub upload: UploadStats,
+    pub ping: PingStats,
+}
+
+#[derive(Serialize)]
+pub struct DownloadStats {
+    pub avg: i64,
+    pub avg_bits: i64,
+    pub avg_bits_human: String,
+    pub max: i64,
+    pub max_bits: i64,
+    pub max_bits_human: String,
+    pub min: i64,
+    pub min_bits: i64,
+    pub min_bits_human: String,
+}
+
+#[derive(Serialize)]
+pub struct UploadStats {
+    pub avg: i64,
+    pub avg_bits: i64,
+    pub avg_bits_human: String,
+    pub max: i64,
+    pub max_bits: i64,
+    pub max_bits_human: String,
+    pub min: i64,
+    pub min_bits: i64,
+    pub min_bits_human: String,
+}
+
+#[derive(Serialize)]
+pub struct PingStats {
+    pub avg: f64,
+    pub max: f64,
+    pub min: f64,
 }
 
 #[derive(sqlx::FromRow, Debug)]
@@ -485,23 +512,48 @@ pub async fn get_stats(State(state): State<AppState>) -> Json<ApiResponse<StatsR
             }
         }
     };
+    
+    let avg_download = row.avg_download.unwrap_or(0.0).round() as i64;
+    let min_download = row.min_download.unwrap_or(0.0).round() as i64;
+    let max_download = row.max_download.unwrap_or(0.0).round() as i64;
+    let avg_upload = row.avg_upload.unwrap_or(0.0).round() as i64;
+    let min_upload = row.min_upload.unwrap_or(0.0).round() as i64;
+    let max_upload = row.max_upload.unwrap_or(0.0).round() as i64;
             
     let stats = StatsResponse {
         total_results: row.total_results,
-        avg_ping: row.avg_ping.unwrap_or(0.0),
-        avg_download: row.avg_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-        avg_upload: row.avg_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-        min_ping: row.min_ping.unwrap_or(0.0),
-        min_download: row.min_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-        min_upload: row.min_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-        max_ping: row.max_ping.unwrap_or(0.0),
-        max_download: row.max_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
-        max_upload: row.max_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+        download: DownloadStats {
+            avg: avg_download,
+            avg_bits: avg_download * 8,
+            avg_bits_human: format_bits((avg_download * 8) as f64),
+            max: max_download,
+            max_bits: max_download * 8,
+            max_bits_human: format_bits((max_download * 8) as f64),
+            min: min_download,
+            min_bits: min_download * 8,
+            min_bits_human: format_bits((min_download * 8) as f64),
+        },
+        upload: UploadStats {
+            avg: avg_upload,
+            avg_bits: avg_upload * 8,
+            avg_bits_human: format_bits((avg_upload * 8) as f64),
+            max: max_upload,
+            max_bits: max_upload * 8,
+            max_bits_human: format_bits((max_upload * 8) as f64),
+            min: min_upload,
+            min_bits: min_upload * 8,
+            min_bits_human: format_bits((min_upload * 8) as f64),
+        },
+        ping: PingStats {
+            avg: (row.avg_ping.unwrap_or(0.0) * 100.0).round() / 100.0,
+            max: (row.max_ping.unwrap_or(0.0) * 100.0).round() / 100.0,
+            min: (row.min_ping.unwrap_or(0.0) * 100.0).round() / 100.0,
+        },
     };
 
     Json(ApiResponse {
         data: Some(stats),
-        message: "Success".to_string(),
+        message: "ok".to_string(),
     })
 }
 
