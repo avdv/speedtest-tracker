@@ -1,9 +1,13 @@
 use axum::{
     extract::{Request, State},
-    http::{header, StatusCode},
+    http::StatusCode,
     middleware::Next,
     response::Response,
     Json,
+};
+use axum_extra::{
+    headers::{authorization::Bearer, Authorization},
+    TypedHeader,
 };
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -17,45 +21,21 @@ pub struct ErrorResponse {
 
 pub async fn require_auth(
     State(state): State<AppState>,
+    TypedHeader(auth): TypedHeader<Authorization<Bearer>>,
     mut request: Request,
     next: Next,
 ) -> Result<Response, (StatusCode, Json<ErrorResponse>)> {
-    let auth_header = request
-        .headers()
-        .get(header::AUTHORIZATION)
-        .and_then(|h| h.to_str().ok());
-
-    let token = match auth_header {
-        Some(header_value) => {
-            // Case-insensitive check for "Bearer " prefix
-            if header_value.len() > 7 && header_value[..7].eq_ignore_ascii_case("Bearer ") {
-                &header_value[7..]
-            } else {
-                tracing::warn!("Invalid authorization header format: {}", header_value);
-                return Err((
-                    StatusCode::UNAUTHORIZED,
-                    Json(ErrorResponse {
-                        message: "Unauthenticated.".to_string(),
-                    }),
-                ));
-            }
-        }
-        None => {
-            tracing::debug!("No authorization header present");
-            return Err((
-                StatusCode::UNAUTHORIZED,
-                Json(ErrorResponse {
-                    message: "Unauthenticated.".to_string(),
-                }),
-            ));
-        }
-    };
+    let token = auth.token();
+    
+    tracing::debug!("Auth token received, length: {}", token.len());
 
     // Hash the token using SHA-256 (same as Laravel Sanctum)
     let mut hasher = Sha256::new();
     hasher.update(token.as_bytes());
     let hash_bytes = hasher.finalize();
     let hashed = hex::encode(hash_bytes);
+    
+    tracing::debug!("Auth attempt - token length: {}, hash: {}...", token.len(), &hashed[..20]);
 
     // Verify token exists in database
     let token_valid = match &state.db {

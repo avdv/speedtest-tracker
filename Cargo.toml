@@ -7,6 +7,7 @@ default-run = "speedtest-admin"
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 axum = { version = "0.7", features = ["macros"] }
+axum-extra = { version = "0.9", features = ["typed-header"] }
 tower = "0.4"
 tower-http = { version = "0.5", features = ["fs", "trace", "cors"] }
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "mysql", "postgres", "chrono"] }
