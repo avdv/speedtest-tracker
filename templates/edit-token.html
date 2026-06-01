@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit API Token</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"] { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .back-link { display: inline-block; margin-bottom: 20px; color: #007bff; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+        .checkbox-group { display: flex; flex-direction: column; gap: 10px; }
+        .checkbox-item { display: flex; align-items: flex-start; gap: 10px; }
+        .checkbox-label { flex: 1; }
+        .checkbox-label label { font-weight: normal; margin: 0; }
+        .checkbox-label small { display: block; color: #666; margin-top: 2px; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <a href="/admin/api-tokens" class="back-link">← Back to API Tokens</a>
+    
+    <div class="card">
+        <h2>Edit API Token</h2>
+        
+        {% if let Some(err) = error %}
+        <div class="error">{{ err }}</div>
+        {% endif %}
+        
+        <form method="post" action="/admin/api-tokens/update">
+            <input type="hidden" name="id" value="{{ self.token.id }}">
+            
+            <div class="form-group">
+                <label for="name">Token Name</label>
+                <input type="text" id="name" name="name" value="{{ self.token.name }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Abilities</label>
+                <div class="checkbox-group">
+                    {% if let Some(abilities_str) = self.token.abilities.as_ref() %}
+                    {% if abilities_str.contains("results:read") %}
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="ability1" name="abilities" value="results:read" checked>
+                        <div class="checkbox-label">
+                            <label for="ability1"><strong>Read Results</strong></label>
+                            <small>View speedtest results via the API</small>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="ability1" name="abilities" value="results:read">
+                        <div class="checkbox-label">
+                            <label for="ability1"><strong>Read Results</strong></label>
+                            <small>View speedtest results via the API</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if abilities_str.contains("speedtests:run") %}
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="ability2" name="abilities" value="speedtests:run" checked>
+                        <div class="checkbox-label">
+                            <label for="ability2"><strong>Run Tests</strong></label>
+                            <small>Trigger new speedtests</small>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="ability2" name="abilities" value="speedtests:run">
+                        <div class="checkbox-label">
+                            <label for="ability2"><strong>Run Tests</strong></label>
+                            <small>Trigger new speedtests</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if abilities_str.contains("ookla:list-servers") %}
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="ability3" name="abilities" value="ookla:list-servers" checked>
+                        <div class="checkbox-label">
+                            <label for="ability3"><strong>List Servers</strong></label>
+                            <small>View available speedtest servers</small>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="ability3" name="abilities" value="ookla:list-servers">
+                        <div class="checkbox-label">
+                            <label for="ability3"><strong>List Servers</strong></label>
+                            <small>View available speedtest servers</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="ability1" name="abilities" value="results:read" checked>
+                        <div class="checkbox-label">
+                            <label for="ability1"><strong>Read Results</strong></label>
+                            <small>View speedtest results via the API</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <button type="submit">Update Token</button>
+        </form>
+    </div>
+</body>
+</html>

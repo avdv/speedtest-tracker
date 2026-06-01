@@ -56,6 +56,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/admin/profile", post(handlers::profile_update))
         .route("/admin/api-tokens", get(handlers::api_tokens_page))
         .route("/admin/api-tokens/create", post(handlers::create_token))
+        .route("/admin/api-tokens/edit/:id", get(handlers::edit_token_page))
+        .route("/admin/api-tokens/update", post(handlers::update_token))
         .route("/admin/api-tokens/delete", post(handlers::delete_token))
         .layer(middleware::from_fn(session::require_session));
 

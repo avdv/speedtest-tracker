@@ -733,3 +733,129 @@ pub async fn logout(
     }
     Redirect::to("/login").into_response()
 }
+
+#[derive(Template)]
+#[template(path = "edit-token.html")]
+pub struct EditTokenTemplate {
+    token: PersonalAccessToken,
+    error: Option<String>,
+}
+
+pub async fn edit_token_page(
+    State(state): State<AppState>,
+    axum::extract::Path(token_id): axum::extract::Path<i64>,
+) -> Response {
+    let token = match &state.db {
+        Database::Sqlite(pool) => {
+            sqlx::query_as::<_, PersonalAccessToken>(
+                "SELECT * FROM personal_access_tokens WHERE id = ?"
+            )
+            .bind(token_id)
+            .fetch_optional(pool)
+            .await
+        },
+        Database::MySql(pool) => {
+            sqlx::query_as::<_, PersonalAccessToken>(
+                "SELECT * FROM personal_access_tokens WHERE id = ?"
+            )
+            .bind(token_id)
+            .fetch_optional(pool)
+            .await
+        },
+        Database::Postgres(pool) => {
+            sqlx::query_as::<_, PersonalAccessToken>(
+                "SELECT * FROM personal_access_tokens WHERE id = $1"
+            )
+            .bind(token_id)
+            .fetch_optional(pool)
+            .await
+        },
+    };
+
+    match token {
+        Ok(Some(token)) => EditTokenTemplate {
+            token,
+            error: None,
+        }.into_response(),
+        _ => Redirect::to("/admin/api-tokens").into_response(),
+    }
+}
+
+pub async fn update_token(
+    State(state): State<AppState>,
+    body: String,
+) -> Response {
+    let mut token_id: Option<i64> = None;
+    let mut name = String::new();
+    let mut abilities: Vec<String> = Vec::new();
+    
+    for pair in body.split('&') {
+        if let Some((key, value)) = pair.split_once('=') {
+            let decoded_value = urlencoding::decode(value).unwrap_or_default();
+            match key {
+                "id" => token_id = decoded_value.parse().ok(),
+                "name" => name = decoded_value.to_string(),
+                "abilities" => abilities.push(decoded_value.to_string()),
+                _ => {}
+            }
+        }
+    }
+    
+    if abilities.is_empty() {
+        abilities.push("results:read".to_string());
+    }
+    
+    let Some(id) = token_id else {
+        return Redirect::to("/admin/api-tokens?error=1").into_response();
+    };
+    
+    let abilities_json = serde_json::to_string(&abilities).unwrap_or_else(|_| "[]".to_string());
+    
+    let success = match &state.db {
+        Database::Sqlite(pool) => {
+            sqlx::query(
+                "UPDATE personal_access_tokens 
+                 SET name = ?, abilities = ?, updated_at = datetime('now')
+                 WHERE id = ?"
+            )
+            .bind(&name)
+            .bind(&abilities_json)
+            .bind(id)
+            .execute(pool)
+            .await
+            .is_ok()
+        },
+        Database::MySql(pool) => {
+            sqlx::query(
+                "UPDATE personal_access_tokens 
+                 SET name = ?, abilities = ?, updated_at = NOW()
+                 WHERE id = ?"
+            )
+            .bind(&name)
+            .bind(&abilities_json)
+            .bind(id)
+            .execute(pool)
+            .await
+            .is_ok()
+        },
+        Database::Postgres(pool) => {
+            sqlx::query(
+                "UPDATE personal_access_tokens 
+                 SET name = $1, abilities = $2, updated_at = NOW()
+                 WHERE id = $3"
+            )
+            .bind(&name)
+            .bind(&abilities_json)
+            .bind(id)
+            .execute(pool)
+            .await
+            .is_ok()
+        },
+    };
+
+    if success {
+        Redirect::to("/admin/api-tokens?updated=1").into_response()
+    } else {
+        Redirect::to("/admin/api-tokens?error=1").into_response()
+    }
+}

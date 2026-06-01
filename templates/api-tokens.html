@@ -334,6 +334,7 @@
                         </td>
                         <td>{{ token.created_at.format("%Y-%m-%d") }}</td>
                         <td>
+                            <a href="/admin/api-tokens/edit/{{ token.id }}" style="margin-right: 10px;">Edit</a>
                             <form method="post" action="/admin/api-tokens/delete" style="display: inline;">
                                 <input type="hidden" name="id" value="{{ token.id }}">
                                 <button type="submit" class="danger" onclick="return confirm('Delete this token? This cannot be undone.')">Delete</button>
