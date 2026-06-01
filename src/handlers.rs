@@ -162,7 +162,7 @@ pub async fn home_dashboard(
             
             let time_filter = format!("datetime('now', '-{} hours')", hours);
             let query = format!(
-                "SELECT * FROM results WHERE created_at >= {} ORDER BY created_at ASC",
+                "SELECT * FROM results WHERE created_at >= {} AND status = 'completed' ORDER BY created_at ASC",
                 time_filter
             );
             
@@ -172,7 +172,7 @@ pub async fn home_dashboard(
                 .unwrap_or_default();
             
             let total: i64 = sqlx::query_scalar(&format!(
-                "SELECT COUNT(*) FROM results WHERE created_at >= {}",
+                "SELECT COUNT(*) FROM results WHERE created_at >= {} AND status = 'completed'",
                 time_filter
             ))
             .fetch_one(pool)
@@ -180,7 +180,7 @@ pub async fn home_dashboard(
             .unwrap_or(0);
             
             let avg_download: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= {}",
+                "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= {} AND status = 'completed'",
                 time_filter
             ))
             .fetch_one(pool)
@@ -188,7 +188,7 @@ pub async fn home_dashboard(
             .ok();
             
             let avg_upload: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= {}",
+                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= {} AND status = 'completed'",
                 time_filter
             ))
             .fetch_one(pool)
@@ -196,7 +196,7 @@ pub async fn home_dashboard(
             .ok();
             
             let avg_ping: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= {}",
+                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= {} AND status = 'completed'",
                 time_filter
             ))
             .fetch_one(pool)
@@ -229,7 +229,7 @@ pub async fn home_dashboard(
             .unwrap_or_default();
             
             let query = format!(
-                "SELECT * FROM results WHERE created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR) ORDER BY created_at ASC",
+                "SELECT * FROM results WHERE created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR) AND status = 'completed' ORDER BY created_at ASC",
                 hours
             );
             
@@ -239,7 +239,7 @@ pub async fn home_dashboard(
                 .unwrap_or_default();
             
             let total: i64 = sqlx::query_scalar(&format!(
-                "SELECT COUNT(*) FROM results WHERE created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR)",
+                "SELECT COUNT(*) FROM results WHERE created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR) AND status = 'completed'",
                 hours
             ))
             .fetch_one(pool)
@@ -247,7 +247,7 @@ pub async fn home_dashboard(
             .unwrap_or(0);
             
             let avg_download: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR)",
+                "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR) AND status = 'completed'",
                 hours
             ))
             .fetch_one(pool)
@@ -255,7 +255,7 @@ pub async fn home_dashboard(
             .ok();
             
             let avg_upload: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR)",
+                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR) AND status = 'completed'",
                 hours
             ))
             .fetch_one(pool)
@@ -263,7 +263,7 @@ pub async fn home_dashboard(
             .ok();
             
             let avg_ping: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR)",
+                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= DATE_SUB(NOW(), INTERVAL {} HOUR) AND status = 'completed'",
                 hours
             ))
             .fetch_one(pool)
@@ -296,7 +296,7 @@ pub async fn home_dashboard(
             .unwrap_or_default();
             
             let query = format!(
-                "SELECT * FROM results WHERE created_at >= NOW() - INTERVAL '{} hours' ORDER BY created_at ASC",
+                "SELECT * FROM results WHERE created_at >= NOW() - INTERVAL '{} hours' AND status = 'completed' ORDER BY created_at ASC",
                 hours
             );
             
@@ -306,7 +306,7 @@ pub async fn home_dashboard(
                 .unwrap_or_default();
             
             let total: i64 = sqlx::query_scalar(&format!(
-                "SELECT COUNT(*) FROM results WHERE created_at >= NOW() - INTERVAL '{} hours'",
+                "SELECT COUNT(*) FROM results WHERE created_at >= NOW() - INTERVAL '{} hours' AND status = 'completed'",
                 hours
             ))
             .fetch_one(pool)
@@ -314,7 +314,7 @@ pub async fn home_dashboard(
             .unwrap_or(0);
             
             let avg_download: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= NOW() - INTERVAL '{} hours'",
+                "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= NOW() - INTERVAL '{} hours' AND status = 'completed'",
                 hours
             ))
             .fetch_one(pool)
@@ -322,7 +322,7 @@ pub async fn home_dashboard(
             .ok();
             
             let avg_upload: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= NOW() - INTERVAL '{} hours'",
+                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= NOW() - INTERVAL '{} hours' AND status = 'completed'",
                 hours
             ))
             .fetch_one(pool)
@@ -330,7 +330,7 @@ pub async fn home_dashboard(
             .ok();
             
             let avg_ping: Option<f64> = sqlx::query_scalar(&format!(
-                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= NOW() - INTERVAL '{} hours'",
+                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= NOW() - INTERVAL '{} hours' AND status = 'completed'",
                 hours
             ))
             .fetch_one(pool)
