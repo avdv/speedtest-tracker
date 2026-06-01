@@ -7,6 +7,23 @@
 {% endblock %}
 
 {% block extra_styles %}
+<style>
+.stats {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+@media (min-width: 768px) {
+    .stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (min-width: 1024px) {
+    .stats {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
 .time-selector {
     display: flex;
     gap: 0.5rem;
@@ -22,8 +39,19 @@
     font-weight: 500;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
+@media (prefers-color-scheme: dark) {
+    .time-selector a {
+        background: #1f2937;
+        color: #f3f4f6;
+    }
+}
 .time-selector a:hover {
     background: #f3f4f6;
+}
+@media (prefers-color-scheme: dark) {
+    .time-selector a:hover {
+        background: #374151;
+    }
 }
 .time-selector a.active {
     background: #2563eb;
@@ -36,10 +64,20 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     margin-bottom: 2rem;
 }
+@media (prefers-color-scheme: dark) {
+    .chart-section {
+        background: #1f2937;
+    }
+}
 .chart-section h2 {
     margin-bottom: 1.5rem;
     color: #111;
     font-size: 1.25rem;
+}
+@media (prefers-color-scheme: dark) {
+    .chart-section h2 {
+        color: #f3f4f6;
+    }
 }
 .chart-container {
     position: relative;
@@ -52,10 +90,20 @@
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
+@media (prefers-color-scheme: dark) {
+    .recent-tests {
+        background: #1f2937;
+    }
+}
 .recent-tests h2 {
     margin-bottom: 1.5rem;
     color: #111;
     font-size: 1.25rem;
+}
+@media (prefers-color-scheme: dark) {
+    .recent-tests h2 {
+        color: #f3f4f6;
+    }
 }
 .test-item {
     display: grid;
@@ -64,6 +112,11 @@
     padding: 1rem;
     border-bottom: 1px solid #e5e7eb;
     align-items: center;
+}
+@media (prefers-color-scheme: dark) {
+    .test-item {
+        border-bottom: 1px solid #374151;
+    }
 }
 .test-item:last-child {
     border-bottom: none;
@@ -80,6 +133,11 @@
     font-size: 1rem;
     font-weight: 600;
     color: #111;
+}
+@media (prefers-color-scheme: dark) {
+    .test-metric-value {
+        color: #f3f4f6;
+    }
 }
 .test-date {
     font-size: 0.875rem;
@@ -106,18 +164,7 @@
 .view-all a:hover {
     text-decoration: underline;
 }
-{% endblock %}
-
-{% block header %}
-<div class="header">
-    <h1>🐇 Speedtest Tracker</h1>
-    <div class="nav">
-        <a href="/" class="active">Dashboard</a>
-        <a href="/admin/results">Results</a>
-        <a href="/admin/profile">Profile</a>
-        <a href="/admin/api-tokens">API Tokens</a>
-    </div>
-</div>
+</style>
 {% endblock %}
 
 {% block content %}

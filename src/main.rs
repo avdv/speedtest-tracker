@@ -12,6 +12,7 @@ use axum::{
     middleware,
 };
 use tower_http::trace::TraceLayer;
+use tower_http::services::ServeDir;
 use tower_sessions::{SessionManagerLayer, Expiry};
 use tower_sessions_sqlx_store::SqliteStore;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -86,6 +87,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/speedtest/latest", get(api::legacy_latest))
         // Protected API v1 routes
         .nest("/api/v1", api_v1_routes)
+        // Static file serving
+        .nest_service("/css", ServeDir::new("public/css"))
+        .nest_service("/js", ServeDir::new("public/js"))
+        .nest_service("/fonts", ServeDir::new("public/fonts"))
         .layer(session_layer)
         .layer(TraceLayer::new_for_http())
         .with_state(state);

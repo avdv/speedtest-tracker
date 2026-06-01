@@ -3,40 +3,37 @@
 {% block title %}Run Speed Test - Speedtest Tracker{% endblock %}
 
 {% block extra_styles %}
-.form-group { margin-bottom: 15px; }
-label { display: block; margin-bottom: 5px; font-weight: bold; }
-select, input[type="text"] { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
-button:hover { background: #0056b3; }
-button:disabled { background: #ccc; cursor: not-allowed; }
-.back-link { display: inline-block; margin-bottom: 20px; color: #007bff; text-decoration: none; }
-.back-link:hover { text-decoration: underline; }
-.server-info { background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 14px; }
-.server-info strong { display: block; margin-bottom: 5px; }
-.info { background: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
-#status { margin-top: 20px; padding: 15px; border-radius: 4px; display: none; }
-#status.running { background: #fff3cd; color: #856404; display: block; }
-#status.success { background: #d4edda; color: #155724; display: block; }
-#status.error { background: #f8d7da; color: #721c24; display: block; }
-.spinner { border: 3px solid #f3f3f3; border-top: 3px solid #007bff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; margin-right: 10px; }
+<style>
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.spinner { border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; margin-right: 10px; }
+</style>
 {% endblock %}
 
 {% block content %}
-<a href="/admin" class="back-link">← Back to Dashboard</a>
+<a href="/admin" class="inline-block mb-6 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition">
+    ← Back to Dashboard
+</a>
 
-<div class="card">
-    <h2>🚀 Run Speed Test</h2>
+<div class="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-6">
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">🚀 Run Speed Test</h2>
     
-    <div class="info">
-        <strong>About Speed Tests:</strong>
+    <div class="bg-cyan-50 dark:bg-cyan-900/20 text-cyan-900 dark:text-cyan-200 p-4 rounded-lg mb-6">
+        <strong class="block mb-1">About Speed Tests:</strong>
         This will run an Ookla speedtest using the official CLI. The test takes about 30-60 seconds to complete.
     </div>
     
-    <form id="testForm" method="post" action="/admin/speedtest/run">
-        <div class="form-group">
-            <label for="server">Select Server (optional)</label>
-            <select id="server" name="server_id">
+    <form id="testForm" method="post" action="/admin/speedtest/run" class="space-y-6">
+        <div>
+            <label for="server" class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Select Server (optional)
+            </label>
+            <select 
+                id="server" 
+                name="server_id"
+                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg 
+                       bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
+                       focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent
+                       transition">
                 <option value="">Auto-select closest server</option>
                 {% for server in self.servers %}
                 <option value="{{ server.id }}">
@@ -44,16 +41,23 @@ button:disabled { background: #ccc; cursor: not-allowed; }
                 </option>
                 {% endfor %}
             </select>
-            <div class="server-info" id="serverInfo" style="display: none;">
-                <strong>Server Details:</strong>
-                <div id="serverDetails"></div>
+            <div id="serverInfo" class="hidden mt-3 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                <strong class="block mb-2 text-sm text-gray-700 dark:text-gray-300">Server Details:</strong>
+                <div id="serverDetails" class="text-sm text-gray-600 dark:text-gray-400"></div>
             </div>
         </div>
         
-        <button type="submit" id="runButton">Run Speed Test</button>
+        <button 
+            type="submit" 
+            id="runButton"
+            class="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 
+                   disabled:bg-gray-400 disabled:cursor-not-allowed
+                   text-white font-semibold px-6 py-3 rounded-lg transition text-base">
+            Run Speed Test
+        </button>
     </form>
     
-    <div id="status"></div>
+    <div id="status" class="hidden mt-6 p-4 rounded-lg"></div>
 </div>
 {% endblock %}
 
@@ -70,9 +74,9 @@ button:disabled { background: #ccc; cursor: not-allowed; }
         if (this.value) {
             const selectedOption = this.options[this.selectedIndex];
             serverDetails.textContent = selectedOption.textContent;
-            serverInfo.style.display = 'block';
+            serverInfo.classList.remove('hidden');
         } else {
-            serverInfo.style.display = 'none';
+            serverInfo.classList.add('hidden');
         }
     });
     
@@ -80,7 +84,9 @@ button:disabled { background: #ccc; cursor: not-allowed; }
         e.preventDefault();
         
         runButton.disabled = true;
-        statusDiv.className = 'running';
+        statusDiv.classList.remove('hidden', 'bg-green-50', 'dark:bg-green-900/20', 'text-green-800', 'dark:text-green-200', 
+                                   'bg-red-50', 'dark:bg-red-900/20', 'text-red-900', 'dark:text-red-200');
+        statusDiv.classList.add('bg-amber-50', 'dark:bg-amber-500/10', 'text-amber-800', 'dark:text-amber-300');
         statusDiv.innerHTML = '<div class="spinner"></div> Running speed test... This may take up to 60 seconds.';
         
         const formData = new FormData(form);
@@ -98,21 +104,26 @@ button:disabled { background: #ccc; cursor: not-allowed; }
             const result = await response.json();
             
             if (response.ok) {
-                statusDiv.className = 'success';
+                statusDiv.classList.remove('bg-amber-50', 'dark:bg-amber-500/10', 'text-amber-800', 'dark:text-amber-300');
+                statusDiv.classList.add('bg-green-50', 'dark:bg-green-900/20', 'text-green-800', 'dark:text-green-200');
                 statusDiv.innerHTML = `
-                    <strong>✅ Test completed successfully!</strong><br>
-                    Download: ${result.download_mbps} Mbps<br>
-                    Upload: ${result.upload_mbps} Mbps<br>
-                    Ping: ${result.ping} ms<br>
-                    <a href="/admin/results">View all results →</a>
+                    <strong class="block mb-2">✅ Test completed successfully!</strong>
+                    <div class="space-y-1">
+                        <div>Download: ${result.download_mbps} Mbps</div>
+                        <div>Upload: ${result.upload_mbps} Mbps</div>
+                        <div>Ping: ${result.ping} ms</div>
+                        <a href="/admin/results" class="inline-block mt-2 text-green-700 dark:text-green-300 hover:underline">View all results →</a>
+                    </div>
                 `;
             } else {
-                statusDiv.className = 'error';
+                statusDiv.classList.remove('bg-amber-50', 'dark:bg-amber-500/10', 'text-amber-800', 'dark:text-amber-300');
+                statusDiv.classList.add('bg-red-50', 'dark:bg-red-900/20', 'text-red-900', 'dark:text-red-200');
                 statusDiv.textContent = '❌ Error: ' + (result.error || 'Test failed');
                 runButton.disabled = false;
             }
         } catch (error) {
-            statusDiv.className = 'error';
+            statusDiv.classList.remove('bg-amber-50', 'dark:bg-amber-500/10', 'text-amber-800', 'dark:text-amber-300');
+            statusDiv.classList.add('bg-red-50', 'dark:bg-red-900/20', 'text-red-900', 'dark:text-red-200');
             statusDiv.textContent = '❌ Error: ' + error.message;
             runButton.disabled = false;
         }

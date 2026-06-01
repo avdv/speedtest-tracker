@@ -3,14 +3,17 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "vite build"
+        "build": "vite build",
+        "build:rust-css": "tailwindcss -i resources/css/rust/app.css -o public/css/rust-app.css --minify",
+        "watch:rust-css": "tailwindcss -i resources/css/rust/app.css -o public/css/rust-app.css --watch"
     },
     "devDependencies": {
+        "@tailwindcss/cli": "^4.3.0",
         "@tailwindcss/typography": "^0.5.10",
         "@tailwindcss/vite": "^4.1.17",
         "autoprefixer": "^10.4.15",
         "laravel-vite-plugin": "^1.0.0",
-        "tailwindcss": "^4.1.17",
+        "tailwindcss": "^4.3.0",
         "vite": "^6.4.2"
     }
 }

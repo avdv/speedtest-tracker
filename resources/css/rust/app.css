@@ -1,0 +1,42 @@
+@import 'tailwindcss';
+
+/* Tailwind v4 CSS-based configuration */
+@source "../../../templates/**/*.html";
+
+/* Custom component classes */
+@layer components {
+  .stat-card {
+    @apply bg-white dark:bg-gray-900 rounded-lg shadow-sm p-6;
+  }
+  
+  .stat-label {
+    @apply text-sm text-gray-600 dark:text-gray-400 mb-2;
+  }
+  
+  .stat-value {
+    @apply text-3xl font-bold text-blue-600 dark:text-blue-400;
+  }
+  
+  .stat-unit {
+    @apply text-base text-gray-600 dark:text-gray-400 font-normal ml-1;
+  }
+  
+  .status-badge {
+    @apply inline-block px-3 py-1 rounded-full text-xs font-semibold;
+  }
+  
+  .status-completed {
+    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+  }
+  
+  .status-failed {
+    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+  }
+}
+
+/* Custom utilities */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

@@ -3,9 +3,9 @@
 {% block title %}Admin Dashboard - Speedtest Tracker{% endblock %}
 
 {% block content %}
-<h2>Statistics Overview</h2>
+<h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Statistics Overview</h2>
 
-<div class="stats">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
     <div class="stat-card">
         <div class="stat-label">Total Tests</div>
         <div class="stat-value">{{ self.stats.total_tests }}</div>
@@ -24,43 +24,43 @@
     </div>
 </div>
 
-<div class="card">
-    <h2>Latest Speed Test Result</h2>
+<div class="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-6">
+    <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">Latest Speed Test Result</h2>
     
     {% if let Some(result) = latest_result %}
-    <div class="result-details">
-        <div class="detail-item">
-            <div class="detail-label">Download Speed</div>
-            <div class="detail-value">{{ format!("{:.2}", result.download_mbps()) }} Mbps</div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+        <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">Download Speed</div>
+            <div class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ format!("{:.2}", result.download_mbps()) }} Mbps</div>
         </div>
-        <div class="detail-item">
-            <div class="detail-label">Upload Speed</div>
-            <div class="detail-value">{{ format!("{:.2}", result.upload_mbps()) }} Mbps</div>
+        <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">Upload Speed</div>
+            <div class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ format!("{:.2}", result.upload_mbps()) }} Mbps</div>
         </div>
-        <div class="detail-item">
-            <div class="detail-label">Ping</div>
-            <div class="detail-value">{{ format!("{:.1}", result.ping.unwrap_or(0.0)) }} ms</div>
+        <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">Ping</div>
+            <div class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ format!("{:.1}", result.ping.unwrap_or(0.0)) }} ms</div>
         </div>
-        <div class="detail-item">
-            <div class="detail-label">Status</div>
-            <div class="detail-value">
-                <span class="status-badge">{{ result.status }}</span>
+        <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">Status</div>
+            <div class="text-xl font-semibold">
+                <span class="status-badge status-completed">{{ result.status }}</span>
             </div>
         </div>
     </div>
-    <div class="timestamp">
+    <div class="text-sm text-gray-600 dark:text-gray-400 mt-4">
         Tested: {{ result.created_at.format("%Y-%m-%d %H:%M:%S") }}
         {% if result.scheduled %}(Scheduled){% else %}(Manual){% endif %}
     </div>
     {% else %}
-    <div class="empty-state">
+    <div class="text-center py-12 text-gray-500 dark:text-gray-400">
         <p>No speed test results yet.</p>
     </div>
     {% endif %}
 </div>
 
-<div style="text-align: center;">
-    <a href="/admin/results" style="color: #2563eb; text-decoration: none; font-weight: 600;">
+<div class="text-center mt-6">
+    <a href="/admin/results" class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold">
         View All Results →
     </a>
 </div>
