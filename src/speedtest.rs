@@ -39,7 +39,7 @@ struct OoklaPing {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct OoklaSpeed {
-    bandwidth: i64,     // bits per second
+    bandwidth: i64,     // bytes per second
     bytes: i64,
     elapsed: i64,
     latency: Option<OoklaLatency>,
@@ -120,8 +120,8 @@ pub async fn run_speedtest(server_id: Option<i64>) -> Result<SpeedtestResult, St
     
     // Convert to our format
     let result = SpeedtestResult {
-        download: (ookla_result.download.bandwidth / 8) as i64,  // bits to bytes
-        upload: (ookla_result.upload.bandwidth / 8) as i64,      // bits to bytes
+        download: ookla_result.download.bandwidth,
+        upload: ookla_result.upload.bandwidth,
         ping: ookla_result.ping.latency,
         server_id: Some(ookla_result.server.id),
         server_name: Some(ookla_result.server.name.clone()),
