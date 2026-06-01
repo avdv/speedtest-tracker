@@ -27,9 +27,11 @@ pub async fn require_auth(
 
     let token = match auth_header {
         Some(header_value) => {
-            if let Some(token) = header_value.strip_prefix("Bearer ") {
-                token
+            // Case-insensitive check for "Bearer " prefix
+            if header_value.len() > 7 && header_value[..7].eq_ignore_ascii_case("Bearer ") {
+                &header_value[7..]
             } else {
+                tracing::warn!("Invalid authorization header format: {}", header_value);
                 return Err((
                     StatusCode::UNAUTHORIZED,
                     Json(ErrorResponse {
@@ -39,6 +41,7 @@ pub async fn require_auth(
             }
         }
         None => {
+            tracing::debug!("No authorization header present");
             return Err((
                 StatusCode::UNAUTHORIZED,
                 Json(ErrorResponse {
@@ -63,6 +66,10 @@ pub async fn require_auth(
             .bind(&hashed)
             .fetch_optional(pool)
             .await
+            .map_err(|e| {
+                tracing::error!("Database query error: {}", e);
+                e
+            })
             .ok()
             .flatten()
         }
@@ -73,6 +80,10 @@ pub async fn require_auth(
             .bind(&hashed)
             .fetch_optional(pool)
             .await
+            .map_err(|e| {
+                tracing::error!("Database query error: {}", e);
+                e
+            })
             .ok()
             .flatten()
         }
@@ -83,10 +94,18 @@ pub async fn require_auth(
             .bind(&hashed)
             .fetch_optional(pool)
             .await
+            .map_err(|e| {
+                tracing::error!("Database query error: {}", e);
+                e
+            })
             .ok()
             .flatten()
         }
     };
+    
+    if token_valid.is_none() {
+        tracing::warn!("Token not found in database - hash: {}...", &hashed[..20]);
+    }
 
     if let Some(pat) = token_valid {
         // Check if token is expired
