@@ -1,0 +1,308 @@
+{% extends "../base.html" %}
+
+{% block title %}Dashboard - Speedtest Tracker{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block extra_styles %}
+.time-selector {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    justify-content: center;
+}
+.time-selector a {
+    padding: 0.5rem 1.5rem;
+    background: white;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.time-selector a:hover {
+    background: #f3f4f6;
+}
+.time-selector a.active {
+    background: #2563eb;
+    color: white;
+}
+.chart-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+.chart-section h2 {
+    margin-bottom: 1.5rem;
+    color: #111;
+    font-size: 1.25rem;
+}
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin-bottom: 2rem;
+}
+.recent-tests {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.recent-tests h2 {
+    margin-bottom: 1.5rem;
+    color: #111;
+    font-size: 1.25rem;
+}
+.test-item {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) auto auto;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    align-items: center;
+}
+.test-item:last-child {
+    border-bottom: none;
+}
+.test-metric {
+    text-align: center;
+}
+.test-metric-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+}
+.test-metric-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111;
+}
+.test-date {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+.status-completed {
+    background: #d1fae5;
+    color: #065f46;
+}
+.status-failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.view-all {
+    text-align: center;
+    margin-top: 1.5rem;
+}
+.view-all a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+}
+.view-all a:hover {
+    text-decoration: underline;
+}
+{% endblock %}
+
+{% block header %}
+<div class="header">
+    <h1>🐇 Speedtest Tracker</h1>
+    <div class="nav">
+        <a href="/" class="active">Dashboard</a>
+        <a href="/admin/results">Results</a>
+        <a href="/admin/profile">Profile</a>
+        <a href="/admin/api-tokens">API Tokens</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="time-selector">
+    <a href="/?range=24h" class="{% if self.time_range == "24h" %}active{% endif %}">Last 24 Hours</a>
+    <a href="/?range=week" class="{% if self.time_range == "week" %}active{% endif %}">Last Week</a>
+    <a href="/?range=month" class="{% if self.time_range == "month" %}active{% endif %}">Last Month</a>
+</div>
+
+<div class="stats">
+    <div class="stat-card">
+        <div class="stat-label">Total Tests</div>
+        <div class="stat-value">{{ self.stats.total_tests }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Average Download</div>
+        <div class="stat-value">{{ format!("{:.2}", self.stats.avg_download) }} <span class="stat-unit">Mbps</span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Average Upload</div>
+        <div class="stat-value">{{ format!("{:.2}", self.stats.avg_upload) }} <span class="stat-unit">Mbps</span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Average Ping</div>
+        <div class="stat-value">{{ format!("{:.1}", self.stats.avg_ping) }} <span class="stat-unit">ms</span></div>
+    </div>
+</div>
+
+{% if !self.stats.chart_data.is_empty() %}
+<div class="chart-section">
+    <h2>📊 Speed Over Time</h2>
+    <div class="chart-container">
+        <canvas id="speedChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="pingChart"></canvas>
+    </div>
+</div>
+{% endif %}
+
+<div class="recent-tests">
+    <h2>📋 Latest Tests</h2>
+    {% if !self.latest_results.is_empty() %}
+        {% for result in self.latest_results %}
+        <div class="test-item">
+            <div class="test-metric">
+                <div class="test-metric-label">Download</div>
+                <div class="test-metric-value">{{ format!("{:.1}", result.download_mbps()) }} Mbps</div>
+            </div>
+            <div class="test-metric">
+                <div class="test-metric-label">Upload</div>
+                <div class="test-metric-value">{{ format!("{:.1}", result.upload_mbps()) }} Mbps</div>
+            </div>
+            <div class="test-metric">
+                <div class="test-metric-label">Ping</div>
+                <div class="test-metric-value">{{ format!("{:.1}", result.ping.unwrap_or(0.0)) }} ms</div>
+            </div>
+            <div class="test-date">
+                {{ result.created_at.format("%Y-%m-%d %H:%M") }}
+            </div>
+            <div>
+                <span class="status-badge status-{{ result.status.to_lowercase() }}">{{ result.status }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <p>No speed test results yet.</p>
+        </div>
+    {% endif %}
+    
+    <div class="view-all">
+        <a href="/admin/results">View All Results →</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if !self.stats.chart_data.is_empty() %}
+<script>
+    const chartData = [
+        {% for point in self.stats.chart_data %}
+        {
+            timestamp: "{{ point.timestamp }}",
+            download: {{ point.download }},
+            upload: {{ point.upload }},
+            ping: {{ point.ping }}
+        }{% if !loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    const labels = chartData.map(d => d.timestamp);
+    const downloads = chartData.map(d => d.download);
+    const uploads = chartData.map(d => d.upload);
+    const pings = chartData.map(d => d.ping);
+
+    // Speed Chart
+    const speedCtx = document.getElementById('speedChart').getContext('2d');
+    new Chart(speedCtx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Download (Mbps)',
+                    data: downloads,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Upload (Mbps)',
+                    data: uploads,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Download & Upload Speed'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Speed (Mbps)'
+                    }
+                }
+            }
+        }
+    });
+
+    // Ping Chart
+    const pingCtx = document.getElementById('pingChart').getContext('2d');
+    new Chart(pingCtx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Ping (ms)',
+                    data: pings,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Latency (Ping)'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Latency (ms)'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

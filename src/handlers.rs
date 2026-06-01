@@ -8,7 +8,7 @@ use crate::{models::{Result as SpeedTestResult, PersonalAccessToken}, db::Databa
 use serde::Deserialize;
 
 #[derive(Template)]
-#[template(path = "results.html")]
+#[template(path = "pages/results.html")]
 pub struct ResultsListTemplate {
     results: Vec<SpeedTestResult>,
     page: i64,
@@ -73,7 +73,7 @@ pub async fn results_list(
 }
 
 #[derive(Template)]
-#[template(path = "dashboard.html")]
+#[template(path = "pages/dashboard.html")]
 pub struct HomeDashboardTemplate {
     latest_results: Vec<SpeedTestResult>,
     stats: DashboardStats,
@@ -449,7 +449,7 @@ pub async fn login_post(
 }
 
 #[derive(Template)]
-#[template(path = "profile.html")]
+#[template(path = "pages/profile.html")]
 pub struct ProfileTemplate {
     user: crate::models::User,
     message: Option<String>,
@@ -555,7 +555,7 @@ pub async fn profile_update(
 }
 
 #[derive(Template)]
-#[template(path = "api-tokens.html")]
+#[template(path = "pages/api-tokens.html")]
 pub struct ApiTokensTemplate {
     tokens: Vec<PersonalAccessToken>,
     message: Option<String>,
@@ -743,7 +743,7 @@ pub async fn logout(
 }
 
 #[derive(Template)]
-#[template(path = "edit-token.html")]
+#[template(path = "pages/edit-token.html")]
 pub struct EditTokenTemplate {
     token: PersonalAccessToken,
     error: Option<String>,
@@ -869,7 +869,7 @@ pub async fn update_token(
 }
 
 #[derive(Template)]
-#[template(path = "admin.html")]
+#[template(path = "pages/admin.html")]
 pub struct AdminDashboardTemplate {
     stats: AdminStats,
     latest_result: Option<SpeedTestResult>,
@@ -1027,7 +1027,7 @@ pub async fn admin_dashboard(
 }
 
 #[derive(Template)]
-#[template(path = "run-test.html")]
+#[template(path = "pages/run-test.html")]
 pub struct RunTestTemplate {
     servers: Vec<crate::api::OoklaServer>,
 }

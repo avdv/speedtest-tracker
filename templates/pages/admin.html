@@ -1,0 +1,67 @@
+{% extends "../base.html" %}
+
+{% block title %}Admin Dashboard - Speedtest Tracker{% endblock %}
+
+{% block content %}
+<h2>Statistics Overview</h2>
+
+<div class="stats">
+    <div class="stat-card">
+        <div class="stat-label">Total Tests</div>
+        <div class="stat-value">{{ self.stats.total_tests }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Average Download</div>
+        <div class="stat-value">{{ format!("{:.2}", self.stats.avg_download) }} <span class="stat-unit">Mbps</span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Average Upload</div>
+        <div class="stat-value">{{ format!("{:.2}", self.stats.avg_upload) }} <span class="stat-unit">Mbps</span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Average Ping</div>
+        <div class="stat-value">{{ format!("{:.1}", self.stats.avg_ping) }} <span class="stat-unit">ms</span></div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Latest Speed Test Result</h2>
+    
+    {% if let Some(result) = latest_result %}
+    <div class="result-details">
+        <div class="detail-item">
+            <div class="detail-label">Download Speed</div>
+            <div class="detail-value">{{ format!("{:.2}", result.download_mbps()) }} Mbps</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Upload Speed</div>
+            <div class="detail-value">{{ format!("{:.2}", result.upload_mbps()) }} Mbps</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Ping</div>
+            <div class="detail-value">{{ format!("{:.1}", result.ping.unwrap_or(0.0)) }} ms</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Status</div>
+            <div class="detail-value">
+                <span class="status-badge">{{ result.status }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="timestamp">
+        Tested: {{ result.created_at.format("%Y-%m-%d %H:%M:%S") }}
+        {% if result.scheduled %}(Scheduled){% else %}(Manual){% endif %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No speed test results yet.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div style="text-align: center;">
+    <a href="/admin/results" style="color: #2563eb; text-decoration: none; font-weight: 600;">
+        View All Results →
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{# Stat Card Component
+   Usage: {% include "components/stat-card.html" %}
+   Requires variables: label (string), value (string/number), unit (optional string)
+#}
+<div class="stat-card">
+    <div class="stat-label">{{ label }}</div>
+    <div class="stat-value">
+        {{ value }}
+        {% if unit is defined %}
+        <span class="stat-unit">{{ unit }}</span>
+        {% endif %}
+    </div>
+</div>

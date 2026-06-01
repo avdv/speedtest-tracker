@@ -1,0 +1,92 @@
+{% extends "../base.html" %}
+
+{% block title %}Results - Speedtest Tracker{% endblock %}
+
+{% block extra_styles %}
+.test-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+.test-table th, .test-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+.test-table th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+}
+.test-table tr:hover {
+    background: #f9fafb;
+}
+.status-completed {
+    background: #d1fae5;
+    color: #065f46;
+}
+.status-failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+}
+.pagination a {
+    padding: 0.5rem 1rem;
+    background: white;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #2563eb;
+}
+.pagination a:hover {
+    background: #2563eb;
+    color: white;
+}
+{% endblock %}
+
+{% block content %}
+<h2>Speed Test Results</h2>
+
+<div class="card" style="overflow-x: auto;">
+    {% if !self.results.is_empty() %}
+    <table class="test-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Download</th>
+                <th>Upload</th>
+                <th>Ping</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for result in self.results %}
+            <tr>
+                <td>{{ result.created_at.format("%Y-%m-%d %H:%M:%S") }}</td>
+                <td>{{ format!("{:.2}", result.download_mbps()) }} Mbps</td>
+                <td>{{ format!("{:.2}", result.upload_mbps()) }} Mbps</td>
+                <td>{{ format!("{:.1}", result.ping.unwrap_or(0.0)) }} ms</td>
+                <td><span class="status-badge status-{{ result.status.to_lowercase() }}">{{ result.status }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="pagination">
+        {% if self.page > 1 %}
+        <a href="/admin/results?page={{ self.page - 1 }}&per_page={{ self.per_page }}">← Previous</a>
+        {% endif %}
+        <span style="padding: 0.5rem 1rem;">Page {{ self.page }}</span>
+        <a href="/admin/results?page={{ self.page + 1 }}&per_page={{ self.per_page }}">Next →</a>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No speed test results yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
