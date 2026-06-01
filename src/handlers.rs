@@ -410,6 +410,17 @@ pub async fn login_post(
         match bcrypt::verify(&form.password, &user.password) {
             Ok(true) => {
                 tracing::debug!("Password verified, creating session");
+                
+                // Check if there's a redirect URL stored
+                let redirect_url = session.get::<String>("redirect_after_login")
+                    .await
+                    .ok()
+                    .flatten()
+                    .unwrap_or_else(|| "/".to_string());
+                
+                // Clear the redirect URL from session
+                let _ = session.remove::<String>("redirect_after_login").await;
+                
                 // Set session
                 if let Err(e) = crate::session::set_user_session(session, user.id).await {
                     tracing::error!("Failed to set session: {}", e);
@@ -417,12 +428,9 @@ pub async fn login_post(
                         error: Some(format!("Login failed - session error: {}", e)),
                     }.into_response();
                 }
-                tracing::info!("User {} logged in successfully, attempting redirect", user.email);
                 
-                // Try different redirect approaches
-                let response = Redirect::to("/");
-                tracing::debug!("Redirect response created");
-                return response.into_response();
+                tracing::info!("User {} logged in successfully, redirecting to {}", user.email, redirect_url);
+                return Redirect::to(&redirect_url).into_response();
             }
             Ok(false) => {
                 tracing::debug!("Password verification failed");
@@ -857,5 +865,163 @@ pub async fn update_token(
         Redirect::to("/admin/api-tokens?updated=1").into_response()
     } else {
         Redirect::to("/admin/api-tokens?error=1").into_response()
+    }
+}
+
+#[derive(Template)]
+#[template(path = "admin.html")]
+pub struct AdminDashboardTemplate {
+    stats: AdminStats,
+    latest_result: Option<SpeedTestResult>,
+}
+
+pub struct AdminStats {
+    pub total_tests: i64,
+    pub avg_download: f64,
+    pub avg_upload: f64,
+    pub avg_ping: f64,
+}
+
+pub async fn admin_dashboard(
+    State(state): State<AppState>,
+) -> AdminDashboardTemplate {
+    let (latest_result, stats) = match &state.db {
+        Database::Sqlite(pool) => {
+            let latest = sqlx::query_as::<_, SpeedTestResult>(
+                "SELECT * FROM results ORDER BY created_at DESC LIMIT 1"
+            )
+            .fetch_optional(pool)
+            .await
+            .ok()
+            .flatten();
+            
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
+                .fetch_one(pool)
+                .await
+                .unwrap_or(0);
+            
+            let avg_download: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(download) FROM results WHERE download IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let avg_upload: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let avg_ping: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let stats = AdminStats {
+                total_tests: total,
+                avg_download: avg_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                avg_upload: avg_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                avg_ping: avg_ping.unwrap_or(0.0),
+            };
+            
+            (latest, stats)
+        },
+        Database::MySql(pool) => {
+            let latest = sqlx::query_as::<_, SpeedTestResult>(
+                "SELECT * FROM results ORDER BY created_at DESC LIMIT 1"
+            )
+            .fetch_optional(pool)
+            .await
+            .ok()
+            .flatten();
+            
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
+                .fetch_one(pool)
+                .await
+                .unwrap_or(0);
+            
+            let avg_download: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(download) FROM results WHERE download IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let avg_upload: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let avg_ping: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let stats = AdminStats {
+                total_tests: total,
+                avg_download: avg_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                avg_upload: avg_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                avg_ping: avg_ping.unwrap_or(0.0),
+            };
+            
+            (latest, stats)
+        },
+        Database::Postgres(pool) => {
+            let latest = sqlx::query_as::<_, SpeedTestResult>(
+                "SELECT * FROM results ORDER BY created_at DESC LIMIT 1"
+            )
+            .fetch_optional(pool)
+            .await
+            .ok()
+            .flatten();
+            
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
+                .fetch_one(pool)
+                .await
+                .unwrap_or(0);
+            
+            let avg_download: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(download) FROM results WHERE download IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let avg_upload: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let avg_ping: Option<f64> = sqlx::query_scalar(
+                "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL"
+            )
+            .fetch_one(pool)
+            .await
+            .ok();
+            
+            let stats = AdminStats {
+                total_tests: total,
+                avg_download: avg_download.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                avg_upload: avg_upload.unwrap_or(0.0) * 8.0 / 1_000_000.0,
+                avg_ping: avg_ping.unwrap_or(0.0),
+            };
+            
+            (latest, stats)
+        },
+    };
+
+    AdminDashboardTemplate {
+        stats,
+        latest_result,
     }
 }

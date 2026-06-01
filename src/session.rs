@@ -19,8 +19,13 @@ pub async fn require_session(
             next.run(request).await
         }
         _ => {
-            // Not authenticated, redirect to login
-            tracing::debug!("No valid session found, redirecting to login");
+            // Not authenticated, save the original URL and redirect to login
+            let original_uri = request.uri().path();
+            tracing::debug!("No valid session found, redirecting to login. Original URI: {}", original_uri);
+            
+            // Store the redirect URL in session (best effort, ignore errors)
+            let _ = session.insert("redirect_after_login", original_uri.to_string()).await;
+            
             Redirect::to("/login").into_response()
         }
     }
