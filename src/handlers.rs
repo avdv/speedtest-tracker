@@ -72,6 +72,56 @@ pub async fn results_list(
     }
 }
 
+#[derive(Deserialize)]
+pub struct DeleteResultsForm {
+    ids: String,
+}
+
+pub async fn delete_results(
+    State(state): State<AppState>,
+    Form(form): Form<DeleteResultsForm>,
+) -> impl IntoResponse {
+    // Parse comma-separated IDs
+    let ids: Vec<i64> = form.ids
+        .split(',')
+        .filter_map(|s| s.trim().parse::<i64>().ok())
+        .collect();
+    
+    if ids.is_empty() {
+        return Redirect::to("/admin/results");
+    }
+    
+    // Delete results based on database type
+    match &state.db {
+        Database::Sqlite(pool) => {
+            for id in ids {
+                let _ = sqlx::query("DELETE FROM results WHERE id = ?")
+                    .bind(id)
+                    .execute(pool)
+                    .await;
+            }
+        },
+        Database::MySql(pool) => {
+            for id in ids {
+                let _ = sqlx::query("DELETE FROM results WHERE id = ?")
+                    .bind(id)
+                    .execute(pool)
+                    .await;
+            }
+        },
+        Database::Postgres(pool) => {
+            for id in ids {
+                let _ = sqlx::query("DELETE FROM results WHERE id = $1")
+                    .bind(id)
+                    .execute(pool)
+                    .await;
+            }
+        },
+    }
+    
+    Redirect::to("/admin/results")
+}
+
 #[derive(Template)]
 #[template(path = "pages/dashboard.html")]
 pub struct HomeDashboardTemplate {

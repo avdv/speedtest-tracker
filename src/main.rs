@@ -58,6 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let admin_routes = Router::new()
         .route("/admin", get(handlers::admin_dashboard))
         .route("/admin/results", get(handlers::results_list))
+        .route("/admin/results/delete", post(handlers::delete_results))
         .route("/admin/profile", get(handlers::profile_page))
         .route("/admin/profile", post(handlers::profile_update))
         .route("/admin/api-tokens", get(handlers::api_tokens_page))

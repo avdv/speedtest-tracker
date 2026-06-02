@@ -2,8 +2,28 @@
 
 {% block title %}Results - Speedtest Tracker{% endblock %}
 
+{% block extra_styles %}
+<style>
+#deleteButton {
+    display: none;
+}
+#deleteButton.show {
+    display: inline-flex;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Speed Test Results</h2>
+<div class="flex items-center justify-between mb-6">
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Speed Test Results</h2>
+    <button 
+        id="deleteButton" 
+        onclick="confirmDelete()"
+        class="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 
+               text-white font-semibold px-4 py-2 rounded-lg transition items-center gap-2">
+        <span id="deleteCount"></span> Delete Selected
+    </button>
+</div>
 
 <div class="bg-white dark:bg-gray-900 rounded-lg shadow-sm overflow-hidden">
     {% if !self.results.is_empty() %}
@@ -11,6 +31,13 @@
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-800">
                 <tr>
+                    <th class="px-6 py-3 text-left">
+                        <input 
+                            type="checkbox" 
+                            id="selectAll"
+                            onchange="toggleAll(this)"
+                            class="w-4 h-4 text-blue-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500">
+                    </th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                         Date
                     </th>
@@ -31,6 +58,14 @@
             <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                 {% for result in self.results %}
                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <input 
+                            type="checkbox" 
+                            name="result_ids" 
+                            value="{{ result.id }}"
+                            onchange="updateDeleteButton()"
+                            class="result-checkbox w-4 h-4 text-blue-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500">
+                    </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                         {{ result.created_at.format("%Y-%m-%d %H:%M:%S") }}
                     </td>
@@ -77,4 +112,56 @@
     </div>
     {% endif %}
 </div>
+
+<form id="deleteForm" method="post" action="/admin/results/delete" style="display: none;">
+    <input type="hidden" name="ids" id="deleteIds">
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleAll(checkbox) {
+    const checkboxes = document.querySelectorAll('.result-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = checkbox.checked;
+    });
+    updateDeleteButton();
+}
+
+function updateDeleteButton() {
+    const checkboxes = document.querySelectorAll('.result-checkbox:checked');
+    const deleteButton = document.getElementById('deleteButton');
+    const deleteCount = document.getElementById('deleteCount');
+    
+    if (checkboxes.length > 0) {
+        deleteButton.classList.add('show');
+        deleteCount.textContent = `(${checkboxes.length})`;
+    } else {
+        deleteButton.classList.remove('show');
+        deleteCount.textContent = '';
+    }
+    
+    // Update select all checkbox state
+    const allCheckboxes = document.querySelectorAll('.result-checkbox');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    selectAllCheckbox.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
+}
+
+function confirmDelete() {
+    const checkboxes = document.querySelectorAll('.result-checkbox:checked');
+    const count = checkboxes.length;
+    
+    if (count === 0) return;
+    
+    const message = count === 1 
+        ? 'Are you sure you want to delete this result? This action cannot be undone.'
+        : `Are you sure you want to delete ${count} results? This action cannot be undone.`;
+    
+    if (confirm(message)) {
+        const ids = Array.from(checkboxes).map(cb => cb.value).join(',');
+        document.getElementById('deleteIds').value = ids;
+        document.getElementById('deleteForm').submit();
+    }
+}
+</script>
 {% endblock %}
