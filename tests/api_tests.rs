@@ -54,6 +54,8 @@ async fn create_test_result(state: &AppState) -> i64 {
     "#;
     
     match &state.db {
+        #[cfg(feature = "sqlite")]
+
         Database::Sqlite(pool) => {
             sqlx::query(query)
                 .execute(pool)
@@ -67,6 +69,7 @@ async fn create_test_result(state: &AppState) -> i64 {
             
             row.0
         },
+        #[cfg(any(feature = "postgres", feature = "mysql"))]
         _ => panic!("Only SQLite is supported for tests"),
     }
 }
@@ -82,6 +85,8 @@ async fn create_test_token(state: &AppState, abilities: &str) -> String {
     "#;
     
     match &state.db {
+        #[cfg(feature = "sqlite")]
+
         Database::Sqlite(pool) => {
             sqlx::query(query)
                 .bind(&token_hash)
@@ -90,6 +95,7 @@ async fn create_test_token(state: &AppState, abilities: &str) -> String {
                 .await
                 .expect("Failed to insert test token");
         },
+        #[cfg(any(feature = "postgres", feature = "mysql"))]
         _ => panic!("Only SQLite is supported for tests"),
     }
     

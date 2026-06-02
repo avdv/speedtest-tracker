@@ -1,4 +1,7 @@
 // Utility to create a test user in the database
+// Only compiled when sqlite feature is enabled
+#![cfg(feature = "sqlite")]
+
 use std::env;
 
 #[tokio::main]

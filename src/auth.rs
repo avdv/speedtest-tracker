@@ -1,18 +1,18 @@
 use axum::{
+    Json,
     extract::{Request, State},
     http::StatusCode,
     middleware::Next,
     response::Response,
-    Json,
 };
 use axum_extra::{
-    headers::{authorization::Bearer, Authorization},
     TypedHeader,
+    headers::{Authorization, authorization::Bearer},
 };
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
-use crate::{db::Database, models::PersonalAccessToken, AppState};
+use crate::{AppState, db::Database, models::PersonalAccessToken};
 
 #[derive(Serialize)]
 pub struct ErrorResponse {
@@ -26,7 +26,7 @@ pub async fn require_auth(
     next: Next,
 ) -> Result<Response, (StatusCode, Json<ErrorResponse>)> {
     let token = auth.token();
-    
+
     tracing::debug!("Auth token received, length: {}", token.len());
 
     // Hash the token using SHA-256 (same as Laravel Sanctum)
@@ -34,14 +34,20 @@ pub async fn require_auth(
     hasher.update(token.as_bytes());
     let hash_bytes = hasher.finalize();
     let hashed = hex::encode(hash_bytes);
-    
-    tracing::debug!("Auth attempt - token length: {}, hash: {}...", token.len(), &hashed[..20]);
+
+    tracing::debug!(
+        "Auth attempt - token length: {}, hash: {}...",
+        token.len(),
+        &hashed[..20]
+    );
 
     // Verify token exists in database
     let token_valid = match &state.db {
+        #[cfg(feature = "sqlite")]
+
         Database::Sqlite(pool) => {
             sqlx::query_as::<_, PersonalAccessToken>(
-                "SELECT * FROM personal_access_tokens WHERE token = ?"
+                "SELECT * FROM personal_access_tokens WHERE token = $1",
             )
             .bind(&hashed)
             .fetch_optional(pool)
@@ -53,23 +59,11 @@ pub async fn require_auth(
             .ok()
             .flatten()
         }
-        Database::MySql(pool) => {
-            sqlx::query_as::<_, PersonalAccessToken>(
-                "SELECT * FROM personal_access_tokens WHERE token = ?"
-            )
-            .bind(&hashed)
-            .fetch_optional(pool)
-            .await
-            .map_err(|e| {
-                tracing::error!("Database query error: {}", e);
-                e
-            })
-            .ok()
-            .flatten()
-        }
+        #[cfg(feature = "postgres")]
+
         Database::Postgres(pool) => {
             sqlx::query_as::<_, PersonalAccessToken>(
-                "SELECT * FROM personal_access_tokens WHERE token = $1"
+                "SELECT * FROM personal_access_tokens WHERE token = $1",
             )
             .bind(&hashed)
             .fetch_optional(pool)
@@ -81,8 +75,22 @@ pub async fn require_auth(
             .ok()
             .flatten()
         }
+        #[cfg(feature = "mysql")]
+
+        Database::MySql(pool) => sqlx::query_as::<_, PersonalAccessToken>(
+            "SELECT * FROM personal_access_tokens WHERE token = ?",
+        )
+        .bind(&hashed)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Database query error: {}", e);
+            e
+        })
+        .ok()
+        .flatten(),
     };
-    
+
     if token_valid.is_none() {
         tracing::warn!("Token not found in database - hash: {}...", &hashed[..20]);
     }
@@ -106,6 +114,7 @@ pub async fn require_auth(
         let token_id = pat.id;
         tokio::spawn(async move {
             match &state_clone.db {
+                #[cfg(feature = "sqlite")]
                 Database::Sqlite(pool) => {
                     let _ = sqlx::query(
                         "UPDATE personal_access_tokens SET last_used_at = datetime('now') WHERE id = ?"
@@ -114,17 +123,19 @@ pub async fn require_auth(
                     .execute(pool)
                     .await;
                 }
-                Database::MySql(pool) => {
+                #[cfg(feature = "postgres")]
+                Database::Postgres(pool) => {
                     let _ = sqlx::query(
-                        "UPDATE personal_access_tokens SET last_used_at = NOW() WHERE id = ?"
+                        "UPDATE personal_access_tokens SET last_used_at = NOW() WHERE id = ?",
                     )
                     .bind(token_id)
                     .execute(pool)
                     .await;
                 }
-                Database::Postgres(pool) => {
+                #[cfg(feature = "mysql")]
+                Database::MySql(pool) => {
                     let _ = sqlx::query(
-                        "UPDATE personal_access_tokens SET last_used_at = NOW() WHERE id = $1"
+                        "UPDATE personal_access_tokens SET last_used_at = NOW() WHERE id = $1",
                     )
                     .bind(token_id)
                     .execute(pool)
@@ -135,7 +146,7 @@ pub async fn require_auth(
 
         // Store token in request extensions for later use if needed
         request.extensions_mut().insert(pat);
-        
+
         Ok(next.run(request).await)
     } else {
         Err((

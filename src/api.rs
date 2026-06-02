@@ -135,6 +135,8 @@ pub async fn healthcheck() -> Json<ApiResponse<()>> {
 // GET /api/speedtest/latest (legacy v0 endpoint)
 pub async fn legacy_latest(State(state): State<AppState>) -> impl IntoResponse {
     let result = match &state.db {
+        #[cfg(feature = "sqlite")]
+
         Database::Sqlite(pool) => {
             sqlx::query_as::<_, SpeedTestResult>(
                 "SELECT * FROM results WHERE status IN ('completed', 'failed') ORDER BY created_at DESC LIMIT 1"
@@ -144,6 +146,8 @@ pub async fn legacy_latest(State(state): State<AppState>) -> impl IntoResponse {
             .ok()
             .flatten()
         },
+        #[cfg(feature = "mysql")]
+
         Database::MySql(pool) => {
             sqlx::query_as::<_, SpeedTestResult>(
                 "SELECT * FROM results WHERE status IN ('completed', 'failed') ORDER BY created_at DESC LIMIT 1"
@@ -153,6 +157,8 @@ pub async fn legacy_latest(State(state): State<AppState>) -> impl IntoResponse {
             .ok()
             .flatten()
         },
+        #[cfg(feature = "postgres")]
+
         Database::Postgres(pool) => {
             sqlx::query_as::<_, SpeedTestResult>(
                 "SELECT * FROM results WHERE status IN ('completed', 'failed') ORDER BY created_at DESC LIMIT 1"
@@ -217,6 +223,8 @@ pub async fn list_results(
     let offset = (params.page - 1) * params.per_page;
     
     let (results, total) = match &state.db {
+        #[cfg(feature = "sqlite")]
+
         Database::Sqlite(pool) => {
             let results = sqlx::query_as::<_, SpeedTestResult>(
                 "SELECT * FROM results ORDER BY created_at DESC LIMIT ? OFFSET ?"
@@ -234,6 +242,8 @@ pub async fn list_results(
             
             (results, total)
         },
+        #[cfg(feature = "mysql")]
+
         Database::MySql(pool) => {
             let results = sqlx::query_as::<_, SpeedTestResult>(
                 "SELECT * FROM results ORDER BY created_at DESC LIMIT ? OFFSET ?"
@@ -251,6 +261,8 @@ pub async fn list_results(
             
             (results, total)
         },
+        #[cfg(feature = "postgres")]
+
         Database::Postgres(pool) => {
             let results = sqlx::query_as::<_, SpeedTestResult>(
                 "SELECT * FROM results ORDER BY created_at DESC LIMIT $1 OFFSET $2"
@@ -281,6 +293,8 @@ pub async fn list_results(
 // GET /api/v1/results/latest
 pub async fn latest_result(State(state): State<AppState>) -> impl IntoResponse {
     let result = match &state.db {
+        #[cfg(feature = "sqlite")]
+
         Database::Sqlite(pool) => {
             sqlx::query_as::<_, SpeedTestResult>(
                 "SELECT * FROM results ORDER BY created_at DESC LIMIT 1"
@@ -290,6 +304,8 @@ pub async fn latest_result(State(state): State<AppState>) -> impl IntoResponse {
             .ok()
             .flatten()
         },
+        #[cfg(feature = "mysql")]
+
         Database::MySql(pool) => {
             sqlx::query_as::<_, SpeedTestResult>(
                 "SELECT * FROM results ORDER BY created_at DESC LIMIT 1"
@@ -299,6 +315,8 @@ pub async fn latest_result(State(state): State<AppState>) -> impl IntoResponse {
             .ok()
             .flatten()
         },
+        #[cfg(feature = "postgres")]
+
         Database::Postgres(pool) => {
             sqlx::query_as::<_, SpeedTestResult>(
                 "SELECT * FROM results ORDER BY created_at DESC LIMIT 1"
@@ -334,6 +352,8 @@ pub async fn get_result(
     Path(id): Path<i64>,
 ) -> impl IntoResponse {
     let result = match &state.db {
+        #[cfg(feature = "sqlite")]
+
         Database::Sqlite(pool) => {
             sqlx::query_as::<_, SpeedTestResult>("SELECT * FROM results WHERE id = ?")
                 .bind(id)
@@ -342,6 +362,8 @@ pub async fn get_result(
                 .ok()
                 .flatten()
         },
+        #[cfg(feature = "mysql")]
+
         Database::MySql(pool) => {
             sqlx::query_as::<_, SpeedTestResult>("SELECT * FROM results WHERE id = ?")
                 .bind(id)
@@ -350,6 +372,8 @@ pub async fn get_result(
                 .ok()
                 .flatten()
         },
+        #[cfg(feature = "postgres")]
+
         Database::Postgres(pool) => {
             sqlx::query_as::<_, SpeedTestResult>("SELECT * FROM results WHERE id = $1")
                 .bind(id)
@@ -436,6 +460,8 @@ struct StatsRow {
 // GET /api/v1/stats
 pub async fn get_stats(State(state): State<AppState>) -> Json<ApiResponse<StatsResponse>> {
     let query = match &state.db {
+        #[cfg(feature = "sqlite")]
+
         Database::Sqlite(pool) => {
             sqlx::query_as::<_, StatsRow>(
                 "SELECT 
@@ -454,6 +480,8 @@ pub async fn get_stats(State(state): State<AppState>) -> Json<ApiResponse<StatsR
             .fetch_one(pool)
             .await
         },
+        #[cfg(feature = "mysql")]
+
         Database::MySql(pool) => {
             sqlx::query_as::<_, StatsRow>(
                 "SELECT 
@@ -472,6 +500,8 @@ pub async fn get_stats(State(state): State<AppState>) -> Json<ApiResponse<StatsR
             .fetch_one(pool)
             .await
         },
+        #[cfg(feature = "postgres")]
+
         Database::Postgres(pool) => {
             sqlx::query_as::<_, StatsRow>(
                 "SELECT 
@@ -670,6 +700,8 @@ pub async fn run_speedtest_api(
     
     // Fetch the saved result to return
     let saved_result = match &state.db {
+        #[cfg(feature = "sqlite")]
+
         Database::Sqlite(pool) => {
             sqlx::query_as::<_, SpeedTestResult>(
                 "SELECT * FROM results WHERE id = ?"
@@ -678,6 +710,8 @@ pub async fn run_speedtest_api(
             .fetch_one(pool)
             .await
         }
+        #[cfg(feature = "mysql")]
+
         Database::MySql(pool) => {
             sqlx::query_as::<_, SpeedTestResult>(
                 "SELECT * FROM results WHERE id = ?"
@@ -686,6 +720,8 @@ pub async fn run_speedtest_api(
             .fetch_one(pool)
             .await
         }
+        #[cfg(feature = "postgres")]
+
         Database::Postgres(pool) => {
             sqlx::query_as::<_, SpeedTestResult>(
                 "SELECT * FROM results WHERE id = $1"

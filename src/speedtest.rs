@@ -147,6 +147,8 @@ pub async fn save_result(
     use crate::db::Database;
     
     let result_id = match db {
+        #[cfg(feature = "sqlite")]
+
         Database::Sqlite(pool) => {
             sqlx::query(
                 "INSERT INTO results (service, ping, download, upload, data, status, scheduled, created_at, updated_at)
@@ -164,6 +166,8 @@ pub async fn save_result(
             .map_err(|e| format!("Failed to save result: {}", e))?
             .last_insert_rowid()
         },
+        #[cfg(feature = "mysql")]
+
         Database::MySql(pool) => {
             sqlx::query(
                 "INSERT INTO results (service, ping, download, upload, data, status, scheduled, created_at, updated_at)
@@ -181,6 +185,8 @@ pub async fn save_result(
             .map_err(|e| format!("Failed to save result: {}", e))?
             .last_insert_id() as i64
         },
+        #[cfg(feature = "postgres")]
+
         Database::Postgres(pool) => {
             sqlx::query_scalar(
                 "INSERT INTO results (service, ping, download, upload, data, status, scheduled, created_at, updated_at)

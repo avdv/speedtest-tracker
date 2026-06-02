@@ -14,7 +14,12 @@ use axum::{
 use tower_http::trace::TraceLayer;
 use tower_http::services::ServeDir;
 use tower_sessions::{SessionManagerLayer, Expiry};
+#[cfg(feature = "sqlite")]
 use tower_sessions_sqlx_store::SqliteStore;
+#[cfg(feature = "mysql")]
+use tower_sessions_sqlx_store::MySqlStore;
+#[cfg(feature = "postgres")]
+use tower_sessions_sqlx_store::PostgresStore;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 // Make public for tests
@@ -23,6 +28,53 @@ pub use db::Database;
 #[derive(Clone)]
 pub struct AppState {
     pub db: db::Database,
+}
+
+// Wrapper enum for different session store types
+#[derive(Clone, Debug)]
+pub enum AnySessionStore {
+    #[cfg(feature = "sqlite")]
+    Sqlite(SqliteStore),
+    #[cfg(feature = "mysql")]
+    MySql(MySqlStore),
+    #[cfg(feature = "postgres")]
+    Postgres(PostgresStore),
+}
+
+#[async_trait::async_trait]
+impl tower_sessions::SessionStore for AnySessionStore {
+    async fn save(&self, record: &tower_sessions::session::Record) -> tower_sessions::session_store::Result<()> {
+        match self {
+            #[cfg(feature = "sqlite")]
+            AnySessionStore::Sqlite(store) => store.save(record).await,
+            #[cfg(feature = "mysql")]
+            AnySessionStore::MySql(store) => store.save(record).await,
+            #[cfg(feature = "postgres")]
+            AnySessionStore::Postgres(store) => store.save(record).await,
+        }
+    }
+
+    async fn load(&self, session_id: &tower_sessions::session::Id) -> tower_sessions::session_store::Result<Option<tower_sessions::session::Record>> {
+        match self {
+            #[cfg(feature = "sqlite")]
+            AnySessionStore::Sqlite(store) => store.load(session_id).await,
+            #[cfg(feature = "mysql")]
+            AnySessionStore::MySql(store) => store.load(session_id).await,
+            #[cfg(feature = "postgres")]
+            AnySessionStore::Postgres(store) => store.load(session_id).await,
+        }
+    }
+
+    async fn delete(&self, session_id: &tower_sessions::session::Id) -> tower_sessions::session_store::Result<()> {
+        match self {
+            #[cfg(feature = "sqlite")]
+            AnySessionStore::Sqlite(store) => store.delete(session_id).await,
+            #[cfg(feature = "mysql")]
+            AnySessionStore::MySql(store) => store.delete(session_id).await,
+            #[cfg(feature = "postgres")]
+            AnySessionStore::Postgres(store) => store.delete(session_id).await,
+        }
+    }
 }
 
 #[tokio::main]
@@ -40,15 +92,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db = db::Database::connect().await?;
     let state = AppState { db: db.clone() };
 
-    // Set up session store
+    // Set up session store with conditional compilation
     let session_store = match &db {
+        #[cfg(feature = "sqlite")]
         db::Database::Sqlite(pool) => {
-            SqliteStore::new(pool.clone())
+            let store = SqliteStore::new(pool.clone());
+            store.migrate().await?;
+            AnySessionStore::Sqlite(store)
         }
-        _ => panic!("Only SQLite is supported for sessions currently"),
+        #[cfg(feature = "mysql")]
+        db::Database::MySql(pool) => {
+            let store = MySqlStore::new(pool.clone());
+            store.migrate().await?;
+            AnySessionStore::MySql(store)
+        }
+        #[cfg(feature = "postgres")]
+        db::Database::Postgres(pool) => {
+            let store = PostgresStore::new(pool.clone());
+            store.migrate().await?;
+            AnySessionStore::Postgres(store)
+        }
     };
-    
-    session_store.migrate().await?;
     
     let session_layer = SessionManagerLayer::new(session_store)
         .with_secure(false) // Set to true in production with HTTPS
