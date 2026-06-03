@@ -75,3 +75,30 @@ impl Result {
         self.upload.unwrap_or(0) as f64 * 8.0 / 1_000_000.0
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct Schedule {
+    pub id: i64,
+    pub name: String,
+    pub cron: String,
+    pub server_ids: Option<String>,
+    pub enabled: bool,
+    pub last_run_at: Option<NaiveDateTime>,
+    pub next_run_at: Option<NaiveDateTime>,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
+}
+
+impl Schedule {
+    #[allow(dead_code)]
+    pub fn get_server_ids(&self) -> Vec<i64> {
+        self.server_ids
+            .as_ref()
+            .map(|s| {
+                s.split(',')
+                    .filter_map(|id| id.trim().parse::<i64>().ok())
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+}

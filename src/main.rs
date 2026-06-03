@@ -144,6 +144,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/admin/api-tokens/edit/:id", get(handlers::edit_token_page))
         .route("/admin/api-tokens/update", post(handlers::update_token))
         .route("/admin/api-tokens/delete", post(handlers::delete_token))
+        .route("/admin/schedules", get(handlers::schedules_page))
+        .route("/admin/schedules/create", post(handlers::create_schedule))
+        .route("/admin/schedules/delete", post(handlers::delete_schedule))
+        .route("/admin/schedules/toggle", post(handlers::toggle_schedule))
         .route("/admin/speedtest", get(handlers::run_test_page))
         .route("/admin/speedtest/run", post(handlers::run_test_execute))
         .layer(middleware::from_fn(session::require_session));
