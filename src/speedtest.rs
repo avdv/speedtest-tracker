@@ -3,14 +3,14 @@ use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SpeedtestResult {
-    pub download: i64,      // bytes per second
-    pub upload: i64,        // bytes per second
-    pub ping: f64,          // milliseconds
+    pub download: i64, // bytes per second
+    pub upload: i64,   // bytes per second
+    pub ping: f64,     // milliseconds
     pub server_id: Option<i64>,
     pub server_name: Option<String>,
     pub server_location: Option<String>,
     pub server_country: Option<String>,
-    pub data: String,       // Full JSON response
+    pub data: String, // Full JSON response
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -39,7 +39,7 @@ struct OoklaPing {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct OoklaSpeed {
-    bandwidth: i64,     // bytes per second
+    bandwidth: i64, // bytes per second
     bytes: i64,
     elapsed: i64,
     latency: Option<OoklaLatency>,
@@ -85,39 +85,48 @@ struct OoklaResultInfo {
 }
 
 pub async fn run_speedtest(server_id: Option<i64>) -> Result<SpeedtestResult, String> {
-    tracing::info!("Starting speedtest{}", 
-        if let Some(id) = server_id { format!(" with server {}", id) } else { String::new() }
+    tracing::info!(
+        "Starting speedtest{}",
+        if let Some(id) = server_id {
+            format!(" with server {}", id)
+        } else {
+            String::new()
+        }
     );
-    
+
     // Build command
     let mut cmd = Command::new("speedtest");
     cmd.arg("--accept-license")
-       .arg("--accept-gdpr")
-       .arg("--format=json");
-    
+        .arg("--accept-gdpr")
+        .arg("--format=json");
+
     if let Some(id) = server_id {
         cmd.arg(format!("--server-id={}", id));
     }
-    
+
     tracing::debug!("Executing: {:?}", cmd);
-    
+
     // Run speedtest
-    let output = cmd.output()
-        .map_err(|e| format!("Failed to execute speedtest command: {}. Is 'speedtest' CLI installed?", e))?;
-    
+    let output = cmd.output().map_err(|e| {
+        format!(
+            "Failed to execute speedtest command: {}. Is 'speedtest' CLI installed?",
+            e
+        )
+    })?;
+
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         tracing::error!("Speedtest failed: {}", stderr);
         return Err(format!("Speedtest failed: {}", stderr));
     }
-    
+
     let stdout = String::from_utf8_lossy(&output.stdout);
     tracing::debug!("Speedtest raw output: {}", stdout);
-    
+
     // Parse JSON result
     let ookla_result: OoklaResult = serde_json::from_str(&stdout)
         .map_err(|e| format!("Failed to parse speedtest result: {}", e))?;
-    
+
     // Convert to our format
     let result = SpeedtestResult {
         download: ookla_result.download.bandwidth,
@@ -129,13 +138,14 @@ pub async fn run_speedtest(server_id: Option<i64>) -> Result<SpeedtestResult, St
         server_country: Some(ookla_result.server.country.clone()),
         data: stdout.to_string(),
     };
-    
-    tracing::info!("Speedtest completed: {:.2} Mbps down, {:.2} Mbps up, {:.1} ms ping",
+
+    tracing::info!(
+        "Speedtest completed: {:.2} Mbps down, {:.2} Mbps up, {:.1} ms ping",
         result.download as f64 * 8.0 / 1_000_000.0,
         result.upload as f64 * 8.0 / 1_000_000.0,
         result.ping
     );
-    
+
     Ok(result)
 }
 
@@ -145,7 +155,7 @@ pub async fn save_result(
     scheduled: bool,
 ) -> Result<i64, String> {
     use crate::db::Database;
-    
+
     let result_id = match db {
         #[cfg(feature = "sqlite")]
 
@@ -205,7 +215,7 @@ pub async fn save_result(
             .map_err(|e| format!("Failed to save result: {}", e))?
         },
     };
-    
+
     tracing::info!("Saved speedtest result with ID: {}", result_id);
     Ok(result_id)
 }

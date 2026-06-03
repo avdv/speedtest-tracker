@@ -35,8 +35,7 @@ mod naive_datetime_as_utc {
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S")
-            .map_err(serde::de::Error::custom)
+        NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S").map_err(serde::de::Error::custom)
     }
 }
 

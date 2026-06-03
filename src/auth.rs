@@ -44,39 +44,32 @@ pub async fn require_auth(
     // Verify token exists in database
     let token_valid = match &state.db {
         #[cfg(feature = "sqlite")]
-
-        Database::Sqlite(pool) => {
-            sqlx::query_as::<_, PersonalAccessToken>(
-                "SELECT * FROM personal_access_tokens WHERE token = $1",
-            )
-            .bind(&hashed)
-            .fetch_optional(pool)
-            .await
-            .map_err(|e| {
-                tracing::error!("Database query error: {}", e);
-                e
-            })
-            .ok()
-            .flatten()
-        }
+        Database::Sqlite(pool) => sqlx::query_as::<_, PersonalAccessToken>(
+            "SELECT * FROM personal_access_tokens WHERE token = $1",
+        )
+        .bind(&hashed)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Database query error: {}", e);
+            e
+        })
+        .ok()
+        .flatten(),
         #[cfg(feature = "postgres")]
-
-        Database::Postgres(pool) => {
-            sqlx::query_as::<_, PersonalAccessToken>(
-                "SELECT * FROM personal_access_tokens WHERE token = $1",
-            )
-            .bind(&hashed)
-            .fetch_optional(pool)
-            .await
-            .map_err(|e| {
-                tracing::error!("Database query error: {}", e);
-                e
-            })
-            .ok()
-            .flatten()
-        }
+        Database::Postgres(pool) => sqlx::query_as::<_, PersonalAccessToken>(
+            "SELECT * FROM personal_access_tokens WHERE token = $1",
+        )
+        .bind(&hashed)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Database query error: {}", e);
+            e
+        })
+        .ok()
+        .flatten(),
         #[cfg(feature = "mysql")]
-
         Database::MySql(pool) => sqlx::query_as::<_, PersonalAccessToken>(
             "SELECT * FROM personal_access_tokens WHERE token = ?",
         )

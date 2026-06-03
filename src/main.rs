@@ -1,25 +1,24 @@
+mod api;
 mod auth;
 mod db;
 mod handlers;
 mod models;
-mod api;
 mod session;
 mod speedtest;
 
 use axum::{
+    Router, middleware,
     routing::{get, post},
-    Router,
-    middleware,
 };
-use tower_http::trace::TraceLayer;
 use tower_http::services::ServeDir;
-use tower_sessions::{SessionManagerLayer, Expiry};
-#[cfg(feature = "sqlite")]
-use tower_sessions_sqlx_store::SqliteStore;
+use tower_http::trace::TraceLayer;
+use tower_sessions::{Expiry, SessionManagerLayer};
 #[cfg(feature = "mysql")]
 use tower_sessions_sqlx_store::MySqlStore;
 #[cfg(feature = "postgres")]
 use tower_sessions_sqlx_store::PostgresStore;
+#[cfg(feature = "sqlite")]
+use tower_sessions_sqlx_store::SqliteStore;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 // Make public for tests
@@ -43,7 +42,10 @@ pub enum AnySessionStore {
 
 #[async_trait::async_trait]
 impl tower_sessions::SessionStore for AnySessionStore {
-    async fn save(&self, record: &tower_sessions::session::Record) -> tower_sessions::session_store::Result<()> {
+    async fn save(
+        &self,
+        record: &tower_sessions::session::Record,
+    ) -> tower_sessions::session_store::Result<()> {
         match self {
             #[cfg(feature = "sqlite")]
             AnySessionStore::Sqlite(store) => store.save(record).await,
@@ -54,7 +56,10 @@ impl tower_sessions::SessionStore for AnySessionStore {
         }
     }
 
-    async fn load(&self, session_id: &tower_sessions::session::Id) -> tower_sessions::session_store::Result<Option<tower_sessions::session::Record>> {
+    async fn load(
+        &self,
+        session_id: &tower_sessions::session::Id,
+    ) -> tower_sessions::session_store::Result<Option<tower_sessions::session::Record>> {
         match self {
             #[cfg(feature = "sqlite")]
             AnySessionStore::Sqlite(store) => store.load(session_id).await,
@@ -65,7 +70,10 @@ impl tower_sessions::SessionStore for AnySessionStore {
         }
     }
 
-    async fn delete(&self, session_id: &tower_sessions::session::Id) -> tower_sessions::session_store::Result<()> {
+    async fn delete(
+        &self,
+        session_id: &tower_sessions::session::Id,
+    ) -> tower_sessions::session_store::Result<()> {
         match self {
             #[cfg(feature = "sqlite")]
             AnySessionStore::Sqlite(store) => store.delete(session_id).await,
@@ -80,7 +88,7 @@ impl tower_sessions::SessionStore for AnySessionStore {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
-    
+
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -90,12 +98,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .init();
 
     let db = db::Database::connect().await?;
-    
+
     // Run migrations
     tracing::info!("Running database migrations...");
     db.run_migrations().await?;
     tracing::info!("Database migrations completed");
-    
+
     let state = AppState { db: db.clone() };
 
     // Set up session store with conditional compilation
@@ -119,7 +127,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             AnySessionStore::Postgres(store)
         }
     };
-    
+
     let session_layer = SessionManagerLayer::new(session_store)
         .with_secure(false) // Set to true in production with HTTPS
         .with_expiry(Expiry::OnInactivity(time::Duration::hours(24)));
@@ -148,7 +156,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/stats", get(api::get_stats))
         .route("/ookla/list-servers", get(api::list_ookla_servers))
         .route("/speedtests/run", post(api::run_speedtest_api))
-        .layer(middleware::from_fn_with_state(state.clone(), auth::require_auth));
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth::require_auth,
+        ));
 
     let app = Router::new()
         .route("/", get(handlers::home_dashboard))
@@ -194,9 +205,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let addr = format!("0.0.0.0:{}", port);
-    
+
     tracing::info!("Starting server on {}", addr);
-    
+
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     axum::serve(listener, app).await?;
 
