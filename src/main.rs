@@ -162,6 +162,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Protected API v1 routes
         .nest("/api/v1", api_v1_routes)
         // Static file serving
+        .route(
+            "/favicon.ico",
+            get(|| async {
+                use axum::body::Body;
+                use axum::http::{StatusCode, header};
+                use axum::response::Response;
+
+                match tokio::fs::read("public/favicon.ico").await {
+                    Ok(contents) => Response::builder()
+                        .status(StatusCode::OK)
+                        .header(header::CONTENT_TYPE, "image/x-icon")
+                        .body(Body::from(contents))
+                        .unwrap(),
+                    Err(e) => {
+                        tracing::error!("Error reading favicon.ico: {}", e);
+                        Response::builder()
+                            .status(StatusCode::NOT_FOUND)
+                            .body(Body::empty())
+                            .unwrap()
+                    }
+                }
+            }),
+        )
         .nest_service("/css", ServeDir::new("public/css"))
         .nest_service("/js", ServeDir::new("public/js"))
         .nest_service("/fonts", ServeDir::new("public/fonts"))
