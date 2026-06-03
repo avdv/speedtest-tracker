@@ -58,4 +58,22 @@ impl Database {
         
         panic!("Database URL '{}' not supported or feature not enabled. Enable the corresponding feature: sqlite, mysql, or postgres", database_url);
     }
+
+    pub async fn run_migrations(&self) -> Result<(), sqlx::Error> {
+        match self {
+            #[cfg(feature = "sqlite")]
+            Database::Sqlite(pool) => {
+                sqlx::migrate!("./migrations").run(pool).await?;
+            }
+            #[cfg(feature = "mysql")]
+            Database::MySql(pool) => {
+                sqlx::migrate!("./migrations").run(pool).await?;
+            }
+            #[cfg(feature = "postgres")]
+            Database::Postgres(pool) => {
+                sqlx::migrate!("./migrations").run(pool).await?;
+            }
+        }
+        Ok(())
+    }
 }

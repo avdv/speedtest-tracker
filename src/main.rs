@@ -90,6 +90,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .init();
 
     let db = db::Database::connect().await?;
+    
+    // Run migrations
+    tracing::info!("Running database migrations...");
+    db.run_migrations().await?;
+    tracing::info!("Database migrations completed");
+    
     let state = AppState { db: db.clone() };
 
     // Set up session store with conditional compilation
