@@ -5,6 +5,7 @@ mod handlers;
 mod models;
 mod session;
 mod speedtest;
+mod scheduler;
 
 use axum::{
     Router, middleware,
@@ -87,7 +88,7 @@ impl tower_sessions::SessionStore for AnySessionStore {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
 
     tracing_subscriber::registry()
         .with(
@@ -103,6 +104,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing::info!("Running database migrations...");
     db.run_migrations().await?;
     tracing::info!("Database migrations completed");
+
+    // Initialize and start the scheduler
+    let scheduler = scheduler::SpeedtestScheduler::new(db.clone()).await?;
+    scheduler.start().await?;
 
     let state = AppState { db: db.clone() };
 
