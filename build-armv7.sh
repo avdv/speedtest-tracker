@@ -9,15 +9,21 @@ export PATH="$HOME/.cargo/bin:$PATH"
 # Check if cross is installed
 if ! command -v cross &> /dev/null; then
     echo "Installing cross for easy cross-compilation..."
-    cargo install cross
+    cargo install cross  --git https://github.com/cross-rs/cross.git --rev "65fe72b0cdb1e7e0cc0652517498d4389cc8f5cf"
+fi
+
+
+# mount /nix/store into the container if it exists
+if [[ -d /nix/store ]]; then
+    export NIX_STORE=/nix/store
 fi
 
 # Build for armv7
 echo "Building release binary..."
-cross build --release --target armv7-unknown-linux-musleabihf
+SUPPRESS_BOLTDB_WARNING=1 cross build --release --target armv7-unknown-linux-musleabihf
 
 # Show binary info
-BINARY="target/armv7-unknown-linux-gnueabihf/release/speedtest-admin"
+BINARY="target/armv7-unknown-linux-musleabihf/release/speedtest-admin"
 echo ""
 echo "✅ Build complete!"
 echo "Binary location: $BINARY"
