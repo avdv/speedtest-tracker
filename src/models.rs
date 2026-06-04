@@ -9,10 +9,15 @@ pub struct Result {
     pub ping: Option<f64>,
     pub download: Option<i64>,
     pub upload: Option<i64>,
+    pub download_bytes: Option<i64>,
+    pub upload_bytes: Option<i64>,
     pub comments: Option<String>,
     pub data: Option<String>,
     pub status: String,
     pub scheduled: bool,
+    pub healthy: Option<bool>,
+    pub benchmarks: Option<String>,
+    pub dispatched_by: Option<i64>,
     #[serde(with = "naive_datetime_as_utc")]
     pub created_at: NaiveDateTime,
     #[serde(with = "naive_datetime_as_utc")]
@@ -66,14 +71,51 @@ pub struct PersonalAccessToken {
 
 impl Result {
     pub fn download_mbps(&self) -> f64 {
-        // Database stores bytes/second, multiply by 8 to get bits/second, then divide by 1M for Mbps
+        // Database stores bandwidth in bytes/second, multiply by 8 to get bits/second, then divide by 1M for Mbps
         self.download.unwrap_or(0) as f64 * 8.0 / 1_000_000.0
     }
 
     pub fn upload_mbps(&self) -> f64 {
-        // Database stores bytes/second, multiply by 8 to get bits/second, then divide by 1M for Mbps
+        // Database stores bandwidth in bytes/second, multiply by 8 to get bits/second, then divide by 1M for Mbps
         self.upload.unwrap_or(0) as f64 * 8.0 / 1_000_000.0
     }
+
+    pub fn server_info(&self) -> Option<ServerInfo> {
+        // Parse server info from JSON data field if available
+        self.data.as_ref().and_then(|json_str| {
+            serde_json::from_str::<serde_json::Value>(json_str)
+                .ok()
+                .and_then(|data| {
+                    let server_name = data.get("server")?.get("name")?.as_str().map(String::from);
+                    let server_host = data.get("server")?.get("host")?.as_str().map(String::from);
+                    let server_location = data
+                        .get("server")?
+                        .get("location")?
+                        .as_str()
+                        .map(String::from);
+                    let server_country = data
+                        .get("server")?
+                        .get("country")?
+                        .as_str()
+                        .map(String::from);
+
+                    Some(ServerInfo {
+                        name: server_name,
+                        host: server_host,
+                        location: server_location,
+                        country: server_country,
+                    })
+                })
+        })
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ServerInfo {
+    pub name: Option<String>,
+    pub host: Option<String>,
+    pub location: Option<String>,
+    pub country: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]

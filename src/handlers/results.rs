@@ -45,7 +45,10 @@ pub async fn results_list(
         .bind(offset)
         .fetch_all(pool)
         .await
-        .unwrap_or_default(),
+        .unwrap_or_else(|e| {
+            tracing::error!("Failed to fetch results: {}", e);
+            Vec::new()
+        }),
         #[cfg(feature = "mysql")]
         Database::MySql(pool) => sqlx::query_as::<_, SpeedTestResult>(
             "SELECT * FROM results ORDER BY created_at DESC LIMIT ? OFFSET ?",
@@ -54,7 +57,10 @@ pub async fn results_list(
         .bind(offset)
         .fetch_all(pool)
         .await
-        .unwrap_or_default(),
+        .unwrap_or_else(|e| {
+            tracing::error!("Failed to fetch results: {}", e);
+            Vec::new()
+        }),
         #[cfg(feature = "postgres")]
         Database::Postgres(pool) => sqlx::query_as::<_, SpeedTestResult>(
             "SELECT * FROM results ORDER BY created_at DESC LIMIT $1 OFFSET $2",
@@ -63,7 +69,10 @@ pub async fn results_list(
         .bind(offset)
         .fetch_all(pool)
         .await
-        .unwrap_or_default(),
+        .unwrap_or_else(|e| {
+            tracing::error!("Failed to fetch results: {}", e);
+            Vec::new()
+        }),
     };
 
     ResultsListTemplate {
