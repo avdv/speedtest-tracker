@@ -2,14 +2,22 @@
 
 /// Normalize locale string to match available translations
 pub fn normalize_locale(lang: &str) -> String {
-    let lower = lang.to_lowercase();
-    match lower.as_str() {
+    // Replace underscores with hyphens and lowercase
+    let normalized = lang.replace('_', "-").to_lowercase();
+    
+    match normalized.as_str() {
         "en" | "en-us" | "en-gb" | "en-ca" | "en-au" => "en".to_string(),
         "de" | "de-de" | "de-at" | "de-ch" => "de_DE".to_string(),
         "es" | "es-es" | "es-mx" | "es-ar" => "es_ES".to_string(),
         "fr" | "fr-fr" | "fr-ca" | "fr-be" => "fr_FR".to_string(),
         "nl" | "nl-nl" | "nl-be" => "nl_NL".to_string(),
         "pt-br" | "pt_br" => "pt_BR".to_string(),
+        // If already in our format, check if valid and return as-is
+        s if s == "de_de" => "de_DE".to_string(),
+        s if s == "es_es" => "es_ES".to_string(),
+        s if s == "fr_fr" => "fr_FR".to_string(),
+        s if s == "nl_nl" => "nl_NL".to_string(),
+        s if s == "pt_br" => "pt_BR".to_string(),
         _ => "en".to_string(),
     }
 }

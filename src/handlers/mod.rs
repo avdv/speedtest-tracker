@@ -1,6 +1,7 @@
 mod auth;
 mod dashboard;
 mod dashboard_admin;
+mod language;
 mod profile;
 mod results;
 mod schedules;
@@ -11,6 +12,7 @@ mod tokens;
 pub use auth::{login_page, login_post, logout};
 pub use dashboard::home_dashboard;
 pub use dashboard_admin::admin_dashboard;
+pub use language::set_language;
 pub use profile::{profile_page, profile_update};
 pub use results::{delete_results, results_list};
 pub use schedules::{create_schedule, delete_schedule, schedules_page, toggle_schedule};

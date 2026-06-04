@@ -21,15 +21,35 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="flex items-center justify-between">
                 <h1 class="text-xl md:text-2xl font-bold">🐇 Speedtest Tracker</h1>
-                <nav class="flex gap-2 md:gap-4">
-                    <a href="/" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition">{{ "general.dashboard"|t }}</a>
-                    <a href="/admin/speedtest" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition">Run Test</a>
-                    <a href="/admin/schedules" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition">Schedules</a>
-                    <a href="/admin/results" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition">{{ "general.results"|t }}</a>
-                    <a href="/admin/profile" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition">Profile</a>
-                    <a href="/admin/api-tokens" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition">API Tokens</a>
-                    <a href="/logout" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition">Logout</a>
-                </nav>
+                <div class="flex items-center gap-4">
+                    <nav class="flex gap-2 md:gap-4">
+                        <a href="/" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition">{{ "general.dashboard"|t }}</a>
+                        <a href="/admin/speedtest" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition">Run Test</a>
+                        <a href="/admin/schedules" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition">Schedules</a>
+                        <a href="/admin/results" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition">{{ "general.results"|t }}</a>
+                        <a href="/admin/profile" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition">Profile</a>
+                        <a href="/admin/api-tokens" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition">API Tokens</a>
+                        <a href="/logout" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition">Logout</a>
+                    </nav>
+                    
+                    <!-- Language Switcher -->
+                    <div class="relative language-switcher">
+                        <button id="languageButton" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition flex items-center gap-2">
+                            🌐 <span id="currentLanguage">EN</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div id="languageMenu" class="hidden absolute right-0 mt-2 min-w-max bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
+                            <a href="/set-language/en" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 whitespace-nowrap">🇬🇧 English</a>
+                            <a href="/set-language/de_DE" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 whitespace-nowrap">🇩🇪 Deutsch</a>
+                            <a href="/set-language/es_ES" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 whitespace-nowrap">🇪🇸 Español</a>
+                            <a href="/set-language/fr_FR" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 whitespace-nowrap">🇫🇷 Français</a>
+                            <a href="/set-language/nl_NL" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 whitespace-nowrap">🇳🇱 Nederlands</a>
+                            <a href="/set-language/pt_BR" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 whitespace-nowrap">🇧🇷 Português (BR)</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
@@ -38,6 +58,73 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         {% block content %}{% endblock %}
     </main>
+
+    <script>
+        // Language switcher dropdown
+        document.addEventListener('DOMContentLoaded', function() {
+            const button = document.getElementById('languageButton');
+            const menu = document.getElementById('languageMenu');
+            
+            if (button && menu) {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    menu.classList.toggle('hidden');
+                });
+                
+                // Close menu when clicking outside
+                document.addEventListener('click', function() {
+                    menu.classList.add('hidden');
+                });
+            }
+            
+            // Set current locale display from cookie
+            const localeMap = {
+                'en': 'EN',
+                'de_DE': 'DE',
+                'es_ES': 'ES',
+                'fr_FR': 'FR',
+                'nl_NL': 'NL',
+                'pt_BR': 'PT'
+            };
+            
+            // Get locale from cookie
+            const cookies = document.cookie.split(';');
+            let currentLocale = null;
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'locale') {
+                    currentLocale = value;
+                    break;
+                }
+            }
+            
+            // If no cookie, detect from browser language
+            if (!currentLocale) {
+                const browserLang = navigator.language || navigator.userLanguage;
+                console.log('Browser language:', browserLang);
+                
+                // Normalize browser language to our locale format
+                const langLower = browserLang.toLowerCase();
+                if (langLower.startsWith('de')) currentLocale = 'de_DE';
+                else if (langLower.startsWith('es')) currentLocale = 'es_ES';
+                else if (langLower.startsWith('fr')) currentLocale = 'fr_FR';
+                else if (langLower.startsWith('nl')) currentLocale = 'nl_NL';
+                else if (langLower === 'pt-br') currentLocale = 'pt_BR';
+                else currentLocale = 'en';
+                
+                console.log('Detected locale from browser:', currentLocale);
+            } else {
+                console.log('Locale from cookie:', currentLocale);
+            }
+            
+            const displayLocale = localeMap[currentLocale] || 'EN';
+            const localeElement = document.getElementById('currentLanguage');
+            if (localeElement) {
+                localeElement.textContent = displayLocale;
+                console.log('Set language display to:', displayLocale);
+            }
+        });
+    </script>
 
     {% block extra_scripts %}{% endblock %}
 </body>

@@ -181,6 +181,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/login", get(handlers::login_page))
         .route("/login", post(handlers::login_post))
         .route("/logout", get(handlers::logout))
+        .route("/set-language/:locale", get(handlers::set_language))
         // Public API routes
         .route("/api/healthcheck", get(api::healthcheck))
         .route("/api/speedtest/latest", get(api::legacy_latest))
