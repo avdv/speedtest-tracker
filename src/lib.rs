@@ -2,10 +2,15 @@
 pub mod api;
 pub mod auth;
 pub mod db;
+pub mod filters;
 pub mod handlers;
+pub mod i18n;
+pub mod locale_middleware;
 pub mod models;
 pub mod session;
 pub mod speedtest;
+
+rust_i18n::i18n!("locales", fallback = "en");
 
 // Re-export Database for convenience
 pub use db::Database;

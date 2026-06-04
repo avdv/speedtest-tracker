@@ -1,0 +1,8 @@
+_version: 2
+ookla_servers:
+  de_DE: "Ookla Server"
+  en: "Ookla servers"
+  es_ES: "Servidores de Ookla"
+  fr_FR: "Serveurs Ookla"
+  nl_NL: "Ookla servers"
+  pt_BR: "Servidores Ookla"

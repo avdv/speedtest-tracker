@@ -1,4 +1,4 @@
-use crate::{AppState, db::Database, models::Result as SpeedTestResult};
+use crate::{filters, AppState, db::Database, models::Result as SpeedTestResult};
 use askama_axum::Template;
 use axum::{
     Form,

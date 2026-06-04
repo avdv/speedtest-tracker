@@ -46,6 +46,7 @@ tower-sessions-sqlx-store = { version = "0.14", default-features = false }
 async-trait = "0.1"
 tokio-cron-scheduler = "0.13"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+rust-i18n = "3"
 
 [profile.release]
 strip = true

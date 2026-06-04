@@ -1,6 +1,6 @@
 {% extends "../base.html" %}
 
-{% block title %}Dashboard - Speedtest Tracker{% endblock %}
+{% block title %}{{ "dashboard.title"|t }} - Speedtest Tracker{% endblock %}
 
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -206,20 +206,20 @@
 {% endif %}
 
 <div class="recent-tests">
-    <h2>📋 Latest Tests</h2>
+    <h2>📋 {{ "dashboard.recent_results"|t }}</h2>
     {% if !self.latest_results.is_empty() %}
         {% for result in self.latest_results %}
         <div class="test-item">
             <div class="test-metric">
-                <div class="test-metric-label">Download</div>
+                <div class="test-metric-label">{{ "general.download"|t }}</div>
                 <div class="test-metric-value">{{ format!("{:.1}", result.download_mbps()) }} Mbps</div>
             </div>
             <div class="test-metric">
-                <div class="test-metric-label">Upload</div>
+                <div class="test-metric-label">{{ "general.upload"|t }}</div>
                 <div class="test-metric-value">{{ format!("{:.1}", result.upload_mbps()) }} Mbps</div>
             </div>
             <div class="test-metric">
-                <div class="test-metric-label">Ping</div>
+                <div class="test-metric-label">{{ "general.ping"|t }}</div>
                 <div class="test-metric-value">{{ format!("{:.1}", result.ping.unwrap_or(0.0)) }} ms</div>
             </div>
             <div class="test-date">

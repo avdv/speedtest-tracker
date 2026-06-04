@@ -1,11 +1,16 @@
 mod api;
 mod auth;
 mod db;
+pub mod filters;
 mod handlers;
+mod i18n;
+mod locale_middleware;
 mod models;
 mod scheduler;
 mod session;
 mod speedtest;
+
+rust_i18n::i18n!("locales", fallback = "en");
 
 use axum::{
     Router, middleware,
@@ -208,6 +213,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest_service("/css", ServeDir::new("public/css"))
         .nest_service("/js", ServeDir::new("public/js"))
         .nest_service("/fonts", ServeDir::new("public/fonts"))
+        .layer(middleware::from_fn(locale_middleware::locale_middleware))
         .layer(session_layer)
         .layer(TraceLayer::new_for_http())
         .with_state(state);

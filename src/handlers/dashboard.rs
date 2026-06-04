@@ -1,4 +1,4 @@
-use crate::{AppState, db::Database, models::Result as SpeedTestResult};
+use crate::{AppState, db::Database, filters, models::Result as SpeedTestResult};
 use askama_axum::Template;
 use axum::extract::{Query, State};
 use serde::Deserialize;
