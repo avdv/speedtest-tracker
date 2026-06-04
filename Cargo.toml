@@ -57,3 +57,10 @@ opt-level = "z"
 [dev-dependencies]
 axum-test = "14"
 tokio-test = "0.4"
+
+[package.metadata.i18n]
+# The available locales for your application, default: ["en"].
+available-locales = ["en", "de_DE", "es_ES", "fr_FR", "nl_NL", "pt_BR"]
+
+# The default locale, default: "en".
+# default-locale = "en"
