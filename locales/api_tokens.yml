@@ -1,5 +1,5 @@
 _version: 2
-abilities:
+api_tokens.abilities:
   de_DE: "Fähigkeiten"
   en: "Abilities"
   es_ES: "Permisos"
@@ -20,7 +20,7 @@ all_tokens:
   fr_FR: "Tous les jetons"
   nl_NL: "Alle tokens"
   pt_BR: "Todos os tokens"
-api_token:
+api_tokens.api_token:
   de_DE: "API token"
   en: "API token"
   es_ES: "API toquen"
@@ -34,7 +34,7 @@ api_tokens:
   fr_FR: "jetons API"
   nl_NL: "API tokens"
   pt_BR: "API Tokens"
-create_api_token:
+api_tokens.create_api_token:
   de_DE: "API-Token erstellen"
   en: "Create API token"
   es_ES: "Crear token API"
@@ -62,49 +62,49 @@ expires_at_helper_text:
   fr_FR: "Laisser vide si vous ne voulez pas de date d\\'expiration"
   nl_NL: "Laat leeg als u geen vervaldatum wilt"
   pt_BR: "Deixe em branco se você não quiser uma data de validade"
-label:
+api_tokens.label:
   de_DE: "API-Token"
   en: "API Tokens"
   es_ES: "Tokens API"
   fr_FR: "Jetons API"
   nl_NL: "API Tokens"
   pt_BR: "API Tokens"
-last_used_at:
+api_tokens.last_used_at:
   de_DE: "Zuletzt verwendet am"
   en: "Last used at"
   es_ES: "Usado por última vez el"
   fr_FR: "Dernière utilisation le"
   nl_NL: "Laatst gebruikt op"
   pt_BR: "Última vez usado em"
-list_servers_description:
+api_tokens.list_servers_description:
   de_DE: "Das Token wird die Berechtigung haben, Server zu listen."
   en: "The token will have permission to list servers."
   es_ES: "El token tendrá permiso para listar servidores."
   fr_FR: "Le jeton aura la permission de lister les serveurs."
   nl_NL: "Het token zal toestemming hebben om servers weer te geven."
   pt_BR: "O token terá permissão para listar servidores."
-read_results:
+api_tokens.read_results:
   de_DE: "Ergebnisse lesen"
   en: "Read results"
   es_ES: "Leer resultados"
   fr_FR: "Lire les résultats"
   nl_NL: "Lees resultaten"
   pt_BR: "Ler resultados"
-read_results_description:
+api_tokens.read_results_description:
   de_DE: "Das Token hat die Berechtigung zum Lesen von Ergebnissen und Statistiken."
   en: "The token will have permission to read results and statistics."
   es_ES: "El token tendrá permiso para leer resultados y estadísticas."
   fr_FR: "Le jeton aura la permission de lire les résultats et les statistiques."
   nl_NL: "De token zal toestemming hebben om resultaten en statistieken te lezen."
   pt_BR: "O token terá permissão para ler resultados e estatísticas."
-run_speedtest_description:
+api_tokens.run_speedtest_description:
   de_DE: "Der Token wird die Berechtigung haben, Geschwindigkeitstest auszuführen."
   en: "The token will have permission to run speedtest."
   es_ES: "El token tendrá permiso para ejecutar el test de velocidad."
   fr_FR: "Le jeton aura la permission d\\'exécuter des tests de vitesse."
   nl_NL: "Het token zal toestemming hebben om snelheidstest uit te voeren."
   pt_BR: "O token terá permissão para executar o teste de velocidade."
-title:
+api_tokens.title:
   de_DE: "API-Token"
   en: "API Tokens"
   es_ES: "API tokens"
@@ -118,7 +118,7 @@ token_status:
   fr_FR: "Statut du jeton"
   nl_NL: "Token status"
   pt_BR: "Estado do token"
-your_token:
+api_tokens.your_token:
   de_DE: "Dein Token"
   en: "Your token"
   es_ES: "Tu token"

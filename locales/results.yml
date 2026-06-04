@@ -223,14 +223,14 @@ run_speedtest:
   fr_FR: "Lancer le test de vitesse"
   nl_NL: "Snelheidstest uitvoeren"
   pt_BR: "Executar teste de velocidade"
-scheduled:
+results.scheduled:
   de_DE: "Geplant"
   en: "Scheduled"
   es_ES: "Programado"
   fr_FR: "Planifié"
   nl_NL: "Gepland"
   pt_BR: "Agendado"
-select_server:
+results.select_server:
   de_DE: "Server auswählen"
   en: "Select Server"
   es_ES: "Seleccionar Servidor"
@@ -335,7 +335,7 @@ start:
   fr_FR: "Démarrer"
   nl_NL: "Begin test"
   pt_BR: "Iniciar"
-title:
+results.title:
   de_DE: "Ergebnisse"
   en: "Results"
   es_ES: "Resultados"

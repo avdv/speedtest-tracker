@@ -169,33 +169,33 @@
 
 {% block content %}
 <div class="time-selector">
-    <a href="/?range=24h" class="{% if self.time_range == "24h" %}active{% endif %}">Last 24 Hours</a>
-    <a href="/?range=week" class="{% if self.time_range == "week" %}active{% endif %}">Last Week</a>
-    <a href="/?range=month" class="{% if self.time_range == "month" %}active{% endif %}">Last Month</a>
+    <a href="/?range=24h" class="{% if self.time_range == "24h" %}active{% endif %}">{{ "dashboard.last_24_hours"|t }}</a>
+    <a href="/?range=week" class="{% if self.time_range == "week" %}active{% endif %}">{{ "dashboard.last_week"|t }}</a>
+    <a href="/?range=month" class="{% if self.time_range == "month" %}active{% endif %}">{{ "dashboard.last_month"|t }}</a>
 </div>
 
 <div class="stats">
     <div class="stat-card">
-        <div class="stat-label">Total Tests</div>
+        <div class="stat-label">{{ "general.total_tests"|t }}</div>
         <div class="stat-value">{{ self.stats.total_tests }}</div>
     </div>
     <div class="stat-card">
-        <div class="stat-label">Average Download</div>
-        <div class="stat-value">{{ format!("{:.2}", self.stats.avg_download) }} <span class="stat-unit">Mbps</span></div>
+        <div class="stat-label">{{ "general.average_download"|t }}</div>
+        <div class="stat-value">{{ format!("{:.2}", self.stats.avg_download) }} <span class="stat-unit">{{ "general.mbps"|t }}</span></div>
     </div>
     <div class="stat-card">
-        <div class="stat-label">Average Upload</div>
-        <div class="stat-value">{{ format!("{:.2}", self.stats.avg_upload) }} <span class="stat-unit">Mbps</span></div>
+        <div class="stat-label">{{ "general.average_upload"|t }}</div>
+        <div class="stat-value">{{ format!("{:.2}", self.stats.avg_upload) }} <span class="stat-unit">{{ "general.mbps"|t }}</span></div>
     </div>
     <div class="stat-card">
-        <div class="stat-label">Average Ping</div>
+        <div class="stat-label">{{ "general.average_ping"|t }}</div>
         <div class="stat-value">{{ format!("{:.1}", self.stats.avg_ping) }} <span class="stat-unit">ms</span></div>
     </div>
 </div>
 
 {% if !self.stats.chart_data.is_empty() %}
 <div class="chart-section">
-    <h2>📊 Speed Over Time</h2>
+    <h2>📊 {{ "dashboard.speed_over_time"|t }}</h2>
     <div class="chart-container">
         <canvas id="speedChart"></canvas>
     </div>
@@ -232,12 +232,12 @@
         {% endfor %}
     {% else %}
         <div class="empty-state">
-            <p>No speed test results yet.</p>
+            <p>{{ "general.no_speed_test_results_yet"|t }}</p>
         </div>
     {% endif %}
     
     <div class="view-all">
-        <a href="/admin/results">View All Results →</a>
+        <a href="/admin/results">{{ "dashboard.view_all_results"|t }} →</a>
     </div>
 </div>
 {% endblock %}
@@ -295,7 +295,7 @@
                 },
                 title: {
                     display: true,
-                    text: 'Download & Upload Speed'
+                    text: '{{ "dashboard.download_upload_speed"|t }}'
                 }
             },
             scales: {
@@ -303,7 +303,7 @@
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Speed (Mbps)'
+                        text: '{{ "general.download_speed"|t }} ({{ "general.mbps"|t }})'
                     }
                 }
             }
@@ -336,7 +336,7 @@
                 },
                 title: {
                     display: true,
-                    text: 'Latency (Ping)'
+                    text: '{{ "dashboard.latency_ping"|t }}'
                 }
             },
             scales: {
@@ -344,7 +344,7 @@
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Latency (ms)'
+                        text: '{{ "general.ping"|t }} ({{ "general.ms"|t }})'
                     }
                 }
             }

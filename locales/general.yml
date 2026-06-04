@@ -1,12 +1,12 @@
 _version: 2
-actions:
+general.actions:
   de_DE: "Aktionen"
   en: "Actions"
   es_ES: "Acciones"
   fr_FR: "Actions"
   nl_NL: "Acties"
   pt_BR: "Ações"
-admin:
+general.admin:
   de_DE: "Admin"
   en: "Admin"
   es_ES: "Administrador"
@@ -27,7 +27,7 @@ average_ms:
   fr_FR: "Moyenne (ms)"
   nl_NL: "Gemiddelde (ms)"
   pt_BR: "Média (ms)"
-cancel:
+general.cancel:
   de_DE: "Abbrechen"
   en: "Cancel"
   es_ES: "Cancelar"
@@ -48,14 +48,14 @@ comments:
   fr_FR: "Commentaires"
   nl_NL: "Opmerkingen"
   pt_BR: "Comentários"
-create:
+general.create:
   de_DE: "Anlegen"
   en: "Create"
   es_ES: "Crear"
   fr_FR: "Créer"
   nl_NL: "Aanmaken"
   pt_BR: "Criar"
-created_at:
+general.created_at:
   de_DE: "Erstellt am"
   en: "Created at"
   es_ES: "Creado el"
@@ -83,7 +83,7 @@ general.dashboard:
   fr_FR: "Tableau de bord"
   nl_NL: "Dashboard"
   pt_BR: "Painel"
-delete:
+general.delete:
   de_DE: "Löschen"
   en: "Delete"
   es_ES: "Eliminar"
@@ -130,7 +130,7 @@ donations_description:
   fr_FR: "Soutenez le développement et la maintenance de Speedtest Tracker en faisant un don."
   nl_NL: "Ondersteun de ontwikkeling en het onderhoud van Speedtest Tracker door een donatie te doen."
   pt_BR: "Apoie o desenvolvimento e a manutenção do Speedtest Tracker fazendo uma doação."
-download:
+general.download:
   de_DE: "Download"
   en: "Download"
   es_ES: "Descargar"
@@ -158,14 +158,14 @@ download_ms:
   fr_FR: "Téléchargement (ms)"
   nl_NL: "Downloaden (ms)"
   pt_BR: "Download (ms)"
-edit:
+general.edit:
   de_DE: "Bearbeiten"
   en: "Edit"
   es_ES: "Editar"
   fr_FR: "Modifier"
   nl_NL: "Bewerken"
   pt_BR: "Alterar"
-email:
+general.email:
   de_DE: "E-Mail"
   en: "Email"
   es_ES: "Correo electrónico"
@@ -179,7 +179,7 @@ email_address:
   fr_FR: "Adresse e-mail"
   nl_NL: "E-mail adres"
   pt_BR: "Endereço de e-mail"
-enable:
+general.enable:
   de_DE: "Aktivieren"
   en: "Enable"
   es_ES: "Activar"
@@ -298,7 +298,7 @@ links:
   fr_FR: "Liens"
   nl_NL: "Koppelingen"
   pt_BR: "Links"
-list_servers:
+general.list_servers:
   de_DE: "Server auflisten"
   en: "List servers"
   es_ES: "Listar servidores"
@@ -319,7 +319,7 @@ low_ms:
   fr_FR: "Bas (ms)"
   nl_NL: "Laag (ms)"
   pt_BR: "Baixa (ms)"
-mbps:
+general.mbps:
   de_DE: "Mbps"
   en: "Mbps"
   es_ES: "Mbps"
@@ -340,14 +340,7 @@ metrics:
   fr_FR: "Métriques"
   nl_NL: "Statistieken"
   pt_BR: "Métricas"
-ms:
-  de_DE: "M"
-  en: "ms"
-  es_ES: "m"
-  fr_FR: "ms"
-  nl_NL: "ms"
-  pt_BR: "ms"
-name:
+general.name:
   de_DE: "Name"
   en: "Name"
   es_ES: "Nombre"
@@ -375,7 +368,7 @@ options:
   fr_FR: "Paramètres"
   nl_NL: "Instellingen"
   pt_BR: "Opções"
-password:
+general.password:
   de_DE: "Passwort"
   en: "Password"
   es_ES: "Contraseña"
@@ -389,7 +382,7 @@ password_confirmation:
   fr_FR: "Confirmation du mot de passe"
   nl_NL: "Wachtwoord bevestiging"
   pt_BR: "Confirmação de senha"
-ping:
+general.ping:
   de_DE: "Ping"
   en: "Ping"
   es_ES: "Ping"
@@ -438,14 +431,14 @@ role:
   fr_FR: "Rôle"
   nl_NL: "Functie"
   pt_BR: "Funções"
-run_speedtest:
+general.run_speedtest:
   de_DE: "Schnelltest ausführen"
   en: "Run speedtest"
   es_ES: "Ejecutar el test de velocidad"
   fr_FR: "Test de vitesse"
   nl_NL: "Snelheidstest uitvoeren"
   pt_BR: "Executar teste de velocidade"
-save:
+general.save:
   de_DE: "Speichern"
   en: "Save"
   es_ES: "Guardar"
@@ -459,14 +452,14 @@ search:
   fr_FR: "Chercher"
   nl_NL: "Zoeken"
   pt_BR: "Pesquisar"
-server:
+general.server:
   de_DE: "Server"
   en: "Server"
   es_ES: "Servidor"
   fr_FR: "Serveur"
   nl_NL: "Server"
   pt_BR: "Servidor"
-servers:
+general.servers:
   de_DE: "Server"
   en: "Servers"
   es_ES: "Servidores"
@@ -487,7 +480,7 @@ slower:
   fr_FR: "lent"
   nl_NL: "langzamer"
   pt_BR: "lento"
-speedtest_tracker:
+general.speedtest_tracker:
   de_DE: "Speedtest Tracker"
   en: "Speedtest Tracker"
   es_ES: "Rastreador más rápido"
@@ -508,7 +501,7 @@ stats:
   fr_FR: "Statistiques"
   nl_NL: "Statistieken"
   pt_BR: "Estatísticas"
-status:
+general.status:
   de_DE: "Status"
   en: "Status"
   es_ES: "Estado"
@@ -529,7 +522,7 @@ token:
   fr_FR: "Jeton"
   nl_NL: "Token"
   pt_BR: "Token"
-token_created:
+general.token_created:
   de_DE: "Token erstellt"
   en: "Token Created"
   es_ES: "Token creado"
@@ -585,7 +578,7 @@ updated_at:
   fr_FR: "Mis à jour le"
   nl_NL: "Bijgewerkt op"
   pt_BR: "Atualizado em"
-upload:
+general.upload:
   de_DE: "Hochladen"
   en: "Upload"
   es_ES: "Subir"
@@ -655,3 +648,199 @@ yes:
   fr_FR: "Oui"
   nl_NL: "Ja"
   pt_BR: "Sim"
+general.total_tests:
+  de_DE: "Gesamte Tests"
+  en: "Total Tests"
+  es_ES: "Total de pruebas"
+  fr_FR: "Total des tests"
+  nl_NL: "Totaal aantal tests"
+  pt_BR: "Total de testes"
+general.average_download:
+  de_DE: "Durchschnittlicher Download"
+  en: "Average Download"
+  es_ES: "Promedio de descarga"
+  fr_FR: "Téléchargement moyen"
+  nl_NL: "Gemiddelde download"
+  pt_BR: "Média de Download"
+general.average_upload:
+  de_DE: "Durchschnittlicher Upload"
+  en: "Average Upload"
+  es_ES: "Promedio de subida"
+  fr_FR: "Envoi moyen"
+  nl_NL: "Gemiddelde upload"
+  pt_BR: "Média de Upload"
+general.average_ping:
+  de_DE: "Durchschnittlicher Ping"
+  en: "Average Ping"
+  es_ES: "Promedio de ping"
+  fr_FR: "Latence moyenne"
+  nl_NL: "Gemiddelde ping"
+  pt_BR: "Média de Ping"
+general.download_speed:
+  de_DE: "Download-Geschwindigkeit"
+  en: "Download Speed"
+  es_ES: "Velocidad de descarga"
+  fr_FR: "Vitesse de téléchargement"
+  nl_NL: "Download snelheid"
+  pt_BR: "Velocidade de Download"
+general.upload_speed:
+  de_DE: "Upload-Geschwindigkeit"
+  en: "Upload Speed"
+  es_ES: "Velocidad de subida"
+  fr_FR: "Vitesse d'envoi"
+  nl_NL: "Upload snelheid"
+  pt_BR: "Velocidade de Upload"
+general.no_speed_test_results_yet:
+  de_DE: "Noch keine Geschwindigkeitstestergebnisse."
+  en: "No speed test results yet."
+  es_ES: "Aún no hay resultados de prueba de velocidad."
+  fr_FR: "Pas encore de résultats de test de vitesse."
+  nl_NL: "Nog geen snelheidstestresultaten."
+  pt_BR: "Nenhum resultado de teste de velocidade ainda."
+general.tested:
+  de_DE: "Getestet"
+  en: "Tested"
+  es_ES: "Probado"
+  fr_FR: "Testé"
+  nl_NL: "Getest"
+  pt_BR: "Testado"
+general.manual:
+  de_DE: "Manuell"
+  en: "Manual"
+  es_ES: "Manual"
+  fr_FR: "Manuel"
+  nl_NL: "Handmatig"
+  pt_BR: "Manual"
+general.date:
+  de_DE: "Datum"
+  en: "Date"
+  es_ES: "Fecha"
+  fr_FR: "Date"
+  nl_NL: "Datum"
+  pt_BR: "Data"
+general.server:
+  de_DE: "Server"
+  en: "Server"
+  es_ES: "Servidor"
+  fr_FR: "Serveur"
+  nl_NL: "Server"
+  pt_BR: "Servidor"
+general.unknown:
+  de_DE: "Unbekannt"
+  en: "Unknown"
+  es_ES: "Desconocido"
+  fr_FR: "Inconnu"
+  nl_NL: "Onbekend"
+  pt_BR: "Desconhecido"
+general.previous:
+  de_DE: "Zurück"
+  en: "Previous"
+  es_ES: "Anterior"
+  fr_FR: "Précédent"
+  nl_NL: "Vorige"
+  pt_BR: "Anterior"
+general.next:
+  de_DE: "Weiter"
+  en: "Next"
+  es_ES: "Siguiente"
+  fr_FR: "Suivant"
+  nl_NL: "Volgende"
+  pt_BR: "Próximo"
+general.page:
+  de_DE: "Seite"
+  en: "Page"
+  es_ES: "Página"
+  fr_FR: "Page"
+  nl_NL: "Pagina"
+  pt_BR: "Página"
+general.delete_selected:
+  de_DE: "Ausgewählte löschen"
+  en: "Delete Selected"
+  es_ES: "Eliminar seleccionados"
+  fr_FR: "Supprimer la sélection"
+  nl_NL: "Geselecteerde verwijderen"
+  pt_BR: "Excluir selecionados"
+general.profile:
+  de_DE: "Profil"
+  en: "Profile"
+  es_ES: "Perfil"
+  fr_FR: "Profil"
+  nl_NL: "Profiel"
+  pt_BR: "Perfil"
+general.logout:
+  de_DE: "Abmelden"
+  en: "Logout"
+  es_ES: "Cerrar sesión"
+  fr_FR: "Se déconnecter"
+  nl_NL: "Uitloggen"
+  pt_BR: "Sair"
+general.schedules:
+  de_DE: "Zeitpläne"
+  en: "Schedules"
+  es_ES: "Horarios"
+  fr_FR: "Planifications"
+  nl_NL: "Schema's"
+  pt_BR: "Agendamentos"
+general.scheduled_tests:
+  de_DE: "Geplante Tests"
+  en: "Scheduled Tests"
+  es_ES: "Pruebas programadas"
+  fr_FR: "Tests programmés"
+  nl_NL: "Geplande tests"
+  pt_BR: "Testes agendados"
+general.create_schedule:
+  de_DE: "Zeitplan erstellen"
+  en: "Create Schedule"
+  es_ES: "Crear horario"
+  fr_FR: "Créer une planification"
+  nl_NL: "Schema aanmaken"
+  pt_BR: "Criar agendamento"
+general.schedule_name:
+  de_DE: "Zeitplanname"
+  en: "Schedule Name"
+  es_ES: "Nombre del horario"
+  fr_FR: "Nom de la planification"
+  nl_NL: "Schema naam"
+  pt_BR: "Nome do agendamento"
+general.cron_expression:
+  de_DE: "Cron-Ausdruck"
+  en: "Cron Expression"
+  es_ES: "Expresión Cron"
+  fr_FR: "Expression Cron"
+  nl_NL: "Cron-expressie"
+  pt_BR: "Expressão Cron"
+general.last_run:
+  de_DE: "Letzter Lauf"
+  en: "Last Run"
+  es_ES: "Última ejecución"
+  fr_FR: "Dernière exécution"
+  nl_NL: "Laatste uitvoering"
+  pt_BR: "Última execução"
+general.never:
+  de_DE: "Niemals"
+  en: "Never"
+  es_ES: "Nunca"
+  fr_FR: "Jamais"
+  nl_NL: "Nooit"
+  pt_BR: "Nunca"
+general.enabled:
+  de_DE: "Aktiviert"
+  en: "Enabled"
+  es_ES: "Habilitado"
+  fr_FR: "Activé"
+  nl_NL: "Ingeschakeld"
+  pt_BR: "Habilitado"
+general.disabled:
+  de_DE: "Deaktiviert"
+  en: "Disabled"
+  es_ES: "Deshabilitado"
+  fr_FR: "Désactivé"
+  nl_NL: "Uitgeschakeld"
+  pt_BR: "Desabilitado"
+general.disable:
+  de_DE: "Deaktivieren"
+  en: "Disable"
+  es_ES: "Deshabilitar"
+  fr_FR: "Désactiver"
+  nl_NL: "Uitschakelen"
+  pt_BR: "Desabilitar"
