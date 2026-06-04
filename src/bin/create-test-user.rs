@@ -7,15 +7,18 @@ use std::env;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
-    
-    let email = args.get(1).map(|s| s.as_str()).unwrap_or("admin@example.com");
+
+    let email = args
+        .get(1)
+        .map(|s| s.as_str())
+        .unwrap_or("admin@example.com");
     let password = args.get(2).map(|s| s.as_str()).unwrap_or("password");
     let name = args.get(3).map(|s| s.as_str()).unwrap_or("Admin");
     let role = args.get(4).map(|s| s.as_str()).unwrap_or("admin");
-    
+
     let database_url = env::var("DATABASE_URL")
         .unwrap_or_else(|_| "sqlite:./database/database.sqlite".to_string());
-    
+
     println!("Creating test user...");
     println!("  Email: {}", email);
     println!("  Password: {}", password);
@@ -23,17 +26,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Role: {}", role);
     println!("  Database: {}", database_url);
     println!();
-    
+
     // Hash password
     let hashed = bcrypt::hash(password, 12)?;
-    
+
     // Connect to database
     if database_url.starts_with("sqlite") {
         let pool = sqlx::sqlite::SqlitePoolOptions::new()
             .max_connections(1)
             .connect(&database_url)
             .await?;
-        
+
         // Create tables
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS users (
@@ -46,9 +49,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 remember_token TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )"
-        ).execute(&pool).await?;
-        
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS results (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,13 +67,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 scheduled INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )"
-        ).execute(&pool).await?;
-        
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
         // Insert or replace user
         sqlx::query(
             "INSERT OR REPLACE INTO users (name, email, password, role, created_at, updated_at)
-             VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))"
+             VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))",
         )
         .bind(name)
         .bind(email)
@@ -76,12 +83,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .bind(role)
         .execute(&pool)
         .await?;
-        
+
         // Add some sample results if table is empty
         let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
             .fetch_one(&pool)
             .await?;
-        
+
         if count == 0 {
             println!("Adding sample speedtest results...");
             sqlx::query(
@@ -98,7 +105,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .bind("-1 hour")
             .execute(&pool)
             .await?;
-            
+
             sqlx::query(
                 "INSERT INTO results (service, ping, download, upload, status, scheduled, created_at, updated_at)
                  VALUES (?, ?, ?, ?, ?, ?, datetime('now', ?), datetime('now', ?))"
@@ -113,7 +120,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .bind("-2 hours")
             .execute(&pool)
             .await?;
-            
+
             sqlx::query(
                 "INSERT INTO results (service, ping, download, upload, status, scheduled, created_at, updated_at)
                  VALUES (?, ?, ?, ?, ?, ?, datetime('now', ?), datetime('now', ?))"
@@ -129,7 +136,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .execute(&pool)
             .await?;
         }
-        
+
         println!("✅ User created successfully!");
         println!();
         println!("Login with:");
@@ -140,11 +147,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("  cargo run --release");
         println!();
         println!("Then visit: http://localhost:3000/login");
-        
     } else {
         println!("⚠️  Only SQLite is supported by this utility");
         println!("For MySQL/PostgreSQL, create the user manually.");
     }
-    
+
     Ok(())
 }

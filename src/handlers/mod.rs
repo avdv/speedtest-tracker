@@ -13,6 +13,6 @@ pub use dashboard::home_dashboard;
 pub use dashboard_admin::admin_dashboard;
 pub use profile::{profile_page, profile_update};
 pub use results::{delete_results, results_list};
-pub use schedules::{schedules_page, create_schedule, delete_schedule, toggle_schedule};
+pub use schedules::{create_schedule, delete_schedule, schedules_page, toggle_schedule};
 pub use speedtest::{run_test_execute, run_test_page};
 pub use tokens::{api_tokens_page, create_token, delete_token, edit_token_page, update_token};

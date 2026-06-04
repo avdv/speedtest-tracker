@@ -3,9 +3,9 @@ mod auth;
 mod db;
 mod handlers;
 mod models;
+mod scheduler;
 mod session;
 mod speedtest;
-mod scheduler;
 
 use axum::{
     Router, middleware,

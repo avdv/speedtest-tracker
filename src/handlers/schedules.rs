@@ -33,26 +33,26 @@ pub async fn schedules_page(
 
     let schedules = match &state.db {
         #[cfg(feature = "sqlite")]
-        Database::Sqlite(pool) => sqlx::query_as::<_, Schedule>(
-            "SELECT * FROM schedules ORDER BY created_at DESC",
-        )
-        .fetch_all(pool)
-        .await
-        .unwrap_or_default(),
+        Database::Sqlite(pool) => {
+            sqlx::query_as::<_, Schedule>("SELECT * FROM schedules ORDER BY created_at DESC")
+                .fetch_all(pool)
+                .await
+                .unwrap_or_default()
+        }
         #[cfg(feature = "mysql")]
-        Database::MySql(pool) => sqlx::query_as::<_, Schedule>(
-            "SELECT * FROM schedules ORDER BY created_at DESC",
-        )
-        .fetch_all(pool)
-        .await
-        .unwrap_or_default(),
+        Database::MySql(pool) => {
+            sqlx::query_as::<_, Schedule>("SELECT * FROM schedules ORDER BY created_at DESC")
+                .fetch_all(pool)
+                .await
+                .unwrap_or_default()
+        }
         #[cfg(feature = "postgres")]
-        Database::Postgres(pool) => sqlx::query_as::<_, Schedule>(
-            "SELECT * FROM schedules ORDER BY created_at DESC",
-        )
-        .fetch_all(pool)
-        .await
-        .unwrap_or_default(),
+        Database::Postgres(pool) => {
+            sqlx::query_as::<_, Schedule>("SELECT * FROM schedules ORDER BY created_at DESC")
+                .fetch_all(pool)
+                .await
+                .unwrap_or_default()
+        }
     };
 
     let servers = crate::api::fetch_ookla_servers().await.unwrap_or_default();
@@ -81,47 +81,41 @@ pub async fn create_schedule(
 
     let success = match &state.db {
         #[cfg(feature = "sqlite")]
-        Database::Sqlite(pool) => {
-            sqlx::query(
-                "INSERT INTO schedules (name, cron, server_ids, enabled, created_at, updated_at)
+        Database::Sqlite(pool) => sqlx::query(
+            "INSERT INTO schedules (name, cron, server_ids, enabled, created_at, updated_at)
                  VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))",
-            )
-            .bind(&form.name)
-            .bind(&form.cron)
-            .bind(&server_ids)
-            .bind(enabled)
-            .execute(pool)
-            .await
-            .is_ok()
-        }
+        )
+        .bind(&form.name)
+        .bind(&form.cron)
+        .bind(&server_ids)
+        .bind(enabled)
+        .execute(pool)
+        .await
+        .is_ok(),
         #[cfg(feature = "mysql")]
-        Database::MySql(pool) => {
-            sqlx::query(
-                "INSERT INTO schedules (name, cron, server_ids, enabled, created_at, updated_at)
+        Database::MySql(pool) => sqlx::query(
+            "INSERT INTO schedules (name, cron, server_ids, enabled, created_at, updated_at)
                  VALUES (?, ?, ?, ?, NOW(), NOW())",
-            )
-            .bind(&form.name)
-            .bind(&form.cron)
-            .bind(&server_ids)
-            .bind(enabled)
-            .execute(pool)
-            .await
-            .is_ok()
-        }
+        )
+        .bind(&form.name)
+        .bind(&form.cron)
+        .bind(&server_ids)
+        .bind(enabled)
+        .execute(pool)
+        .await
+        .is_ok(),
         #[cfg(feature = "postgres")]
-        Database::Postgres(pool) => {
-            sqlx::query(
-                "INSERT INTO schedules (name, cron, server_ids, enabled, created_at, updated_at)
+        Database::Postgres(pool) => sqlx::query(
+            "INSERT INTO schedules (name, cron, server_ids, enabled, created_at, updated_at)
                  VALUES ($1, $2, $3, $4, NOW(), NOW())",
-            )
-            .bind(&form.name)
-            .bind(&form.cron)
-            .bind(&server_ids)
-            .bind(enabled)
-            .execute(pool)
-            .await
-            .is_ok()
-        }
+        )
+        .bind(&form.name)
+        .bind(&form.cron)
+        .bind(&server_ids)
+        .bind(enabled)
+        .execute(pool)
+        .await
+        .is_ok(),
     };
 
     if success {
@@ -142,29 +136,23 @@ pub async fn delete_schedule(
 ) -> impl IntoResponse {
     let success = match &state.db {
         #[cfg(feature = "sqlite")]
-        Database::Sqlite(pool) => {
-            sqlx::query("DELETE FROM schedules WHERE id = ?")
-                .bind(form.id)
-                .execute(pool)
-                .await
-                .is_ok()
-        }
+        Database::Sqlite(pool) => sqlx::query("DELETE FROM schedules WHERE id = ?")
+            .bind(form.id)
+            .execute(pool)
+            .await
+            .is_ok(),
         #[cfg(feature = "mysql")]
-        Database::MySql(pool) => {
-            sqlx::query("DELETE FROM schedules WHERE id = ?")
-                .bind(form.id)
-                .execute(pool)
-                .await
-                .is_ok()
-        }
+        Database::MySql(pool) => sqlx::query("DELETE FROM schedules WHERE id = ?")
+            .bind(form.id)
+            .execute(pool)
+            .await
+            .is_ok(),
         #[cfg(feature = "postgres")]
-        Database::Postgres(pool) => {
-            sqlx::query("DELETE FROM schedules WHERE id = $1")
-                .bind(form.id)
-                .execute(pool)
-                .await
-                .is_ok()
-        }
+        Database::Postgres(pool) => sqlx::query("DELETE FROM schedules WHERE id = $1")
+            .bind(form.id)
+            .execute(pool)
+            .await
+            .is_ok(),
     };
 
     if success {
@@ -185,35 +173,29 @@ pub async fn toggle_schedule(
 ) -> impl IntoResponse {
     let success = match &state.db {
         #[cfg(feature = "sqlite")]
-        Database::Sqlite(pool) => {
-            sqlx::query(
-                "UPDATE schedules SET enabled = NOT enabled, updated_at = datetime('now') WHERE id = ?",
-            )
-            .bind(form.id)
-            .execute(pool)
-            .await
-            .is_ok()
-        }
+        Database::Sqlite(pool) => sqlx::query(
+            "UPDATE schedules SET enabled = NOT enabled, updated_at = datetime('now') WHERE id = ?",
+        )
+        .bind(form.id)
+        .execute(pool)
+        .await
+        .is_ok(),
         #[cfg(feature = "mysql")]
-        Database::MySql(pool) => {
-            sqlx::query(
-                "UPDATE schedules SET enabled = NOT enabled, updated_at = NOW() WHERE id = ?",
-            )
-            .bind(form.id)
-            .execute(pool)
-            .await
-            .is_ok()
-        }
+        Database::MySql(pool) => sqlx::query(
+            "UPDATE schedules SET enabled = NOT enabled, updated_at = NOW() WHERE id = ?",
+        )
+        .bind(form.id)
+        .execute(pool)
+        .await
+        .is_ok(),
         #[cfg(feature = "postgres")]
-        Database::Postgres(pool) => {
-            sqlx::query(
-                "UPDATE schedules SET enabled = NOT enabled, updated_at = NOW() WHERE id = $1",
-            )
-            .bind(form.id)
-            .execute(pool)
-            .await
-            .is_ok()
-        }
+        Database::Postgres(pool) => sqlx::query(
+            "UPDATE schedules SET enabled = NOT enabled, updated_at = NOW() WHERE id = $1",
+        )
+        .bind(form.id)
+        .execute(pool)
+        .await
+        .is_ok(),
     };
 
     if success {

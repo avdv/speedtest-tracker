@@ -1,9 +1,9 @@
 // Library exports for testing
+pub mod api;
 pub mod auth;
 pub mod db;
 pub mod handlers;
 pub mod models;
-pub mod api;
 pub mod session;
 pub mod speedtest;
 
@@ -11,12 +11,11 @@ pub mod speedtest;
 pub use db::Database;
 
 use axum::{
+    Router, middleware,
     routing::{get, post},
-    Router,
-    middleware,
 };
-use tower_http::trace::TraceLayer;
 use tower_http::services::ServeDir;
+use tower_http::trace::TraceLayer;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -49,7 +48,10 @@ pub async fn create_app(state: AppState) -> Router {
         .route("/stats", get(api::get_stats))
         .route("/ookla/list-servers", get(api::list_ookla_servers))
         .route("/speedtests/run", post(api::run_speedtest_api))
-        .layer(middleware::from_fn_with_state(state.clone(), auth::require_auth));
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth::require_auth,
+        ));
 
     // Build main router
     Router::new()
