@@ -3,9 +3,11 @@ use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SpeedtestResult {
-    pub download: i64, // bytes per second
-    pub upload: i64,   // bytes per second
-    pub ping: f64,     // milliseconds
+    pub download: i64,       // bytes per second (bandwidth)
+    pub upload: i64,         // bytes per second (bandwidth)
+    pub download_bytes: i64, // total bytes transferred
+    pub upload_bytes: i64,   // total bytes transferred
+    pub ping: f64,           // milliseconds
     pub server_id: Option<i64>,
     pub server_name: Option<String>,
     pub server_location: Option<String>,
@@ -131,6 +133,8 @@ pub async fn run_speedtest(server_id: Option<i64>) -> Result<SpeedtestResult, St
     let result = SpeedtestResult {
         download: ookla_result.download.bandwidth,
         upload: ookla_result.upload.bandwidth,
+        download_bytes: ookla_result.download.bytes,
+        upload_bytes: ookla_result.upload.bytes,
         ping: ookla_result.ping.latency,
         server_id: Some(ookla_result.server.id),
         server_name: Some(ookla_result.server.name.clone()),
@@ -161,13 +165,15 @@ pub async fn save_result(
 
         Database::Sqlite(pool) => {
             sqlx::query(
-                "INSERT INTO results (service, ping, download, upload, data, status, scheduled, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))"
+                "INSERT INTO results (service, ping, download, upload, download_bytes, upload_bytes, data, status, scheduled, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))"
             )
             .bind("ookla")
             .bind(result.ping)
             .bind(result.download)
             .bind(result.upload)
+            .bind(result.download_bytes)
+            .bind(result.upload_bytes)
             .bind(&result.data)
             .bind("completed")
             .bind(scheduled)
@@ -180,13 +186,15 @@ pub async fn save_result(
 
         Database::MySql(pool) => {
             sqlx::query(
-                "INSERT INTO results (service, ping, download, upload, data, status, scheduled, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())"
+                "INSERT INTO results (service, ping, download, upload, download_bytes, upload_bytes, data, status, scheduled, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())"
             )
             .bind("ookla")
             .bind(result.ping)
             .bind(result.download)
             .bind(result.upload)
+            .bind(result.download_bytes)
+            .bind(result.upload_bytes)
             .bind(&result.data)
             .bind("completed")
             .bind(scheduled)
@@ -199,14 +207,16 @@ pub async fn save_result(
 
         Database::Postgres(pool) => {
             sqlx::query_scalar(
-                "INSERT INTO results (service, ping, download, upload, data, status, scheduled, created_at, updated_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+                "INSERT INTO results (service, ping, download, upload, download_bytes, upload_bytes, data, status, scheduled, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
                  RETURNING id"
             )
             .bind("ookla")
             .bind(result.ping)
             .bind(result.download)
             .bind(result.upload)
+            .bind(result.download_bytes)
+            .bind(result.upload_bytes)
             .bind(&result.data)
             .bind("completed")
             .bind(scheduled)
