@@ -8,6 +8,28 @@
 
 {% block extra_styles %}
 <style>
+.next-speedtest-banner {
+    background: #dbeafe;
+    border: 1px solid #3b82f6;
+}
+.next-speedtest-banner p {
+    color: #1e40af;
+}
+.next-speedtest-banner svg {
+    color: #3b82f6;
+}
+@media (prefers-color-scheme: dark) {
+    .next-speedtest-banner {
+        background: rgba(59, 130, 246, 0.1);
+        border-color: #3b82f6;
+    }
+    .next-speedtest-banner p {
+        color: #93c5fd;
+    }
+    .next-speedtest-banner svg {
+        color: #60a5fa;
+    }
+}
 .stats {
     display: grid;
     grid-template-columns: repeat(1, 1fr);
@@ -168,6 +190,17 @@
 {% endblock %}
 
 {% block content %}
+{% if let Some(next_test) = self.next_speedtest %}
+<div class="next-speedtest-banner" style="border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+    <svg style="width: 1.25rem; height: 1.25rem; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <p style="margin: 0; font-size: 0.875rem;">
+        <strong>{{ "next_speedtest_at"|t }}:</strong> {{ next_test }}
+    </p>
+</div>
+{% endif %}
+
 <div class="time-selector">
     <a href="/?range=24h" class="{% if self.time_range == "24h" %}active{% endif %}">{{ "dashboard.last_24_hours"|t }}</a>
     <a href="/?range=week" class="{% if self.time_range == "week" %}active{% endif %}">{{ "dashboard.last_week"|t }}</a>

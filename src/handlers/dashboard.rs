@@ -2,6 +2,9 @@ use crate::{AppState, db::Database, filters, models::Result as SpeedTestResult};
 use askama_axum::Template;
 use axum::extract::{Query, State};
 use serde::Deserialize;
+use chrono::Local;
+use std::env;
+use std::str::FromStr;
 
 #[derive(Template)]
 #[template(path = "pages/dashboard.html")]
@@ -9,6 +12,7 @@ pub struct HomeDashboardTemplate {
     pub latest_results: Vec<SpeedTestResult>,
     pub stats: DashboardStats,
     pub time_range: String,
+    pub next_speedtest: Option<String>,
 }
 
 pub struct DashboardStats {
@@ -35,6 +39,38 @@ pub struct TimeRangeQuery {
 fn default_time_range() -> String {
     "24h".to_string()
 }
+
+fn get_next_scheduled_test() -> Option<String> {
+    let schedule_expr = env::var("SPEEDTEST_SCHEDULE").ok()?;
+    
+    if schedule_expr.is_empty() {
+        return None;
+    }
+
+    // Convert 5-field cron to 6-field (add seconds at start) if needed
+    let schedule_expr = if schedule_expr.split_whitespace().count() == 5 {
+        format!("0 {}", schedule_expr)
+    } else {
+        schedule_expr
+    };
+
+    // Parse the cron expression
+    let schedule = match cron::Schedule::from_str(&schedule_expr) {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::warn!("Failed to parse cron expression '{}': {}", schedule_expr, e);
+            return None;
+        }
+    };
+
+    // Get the next run time
+    if let Some(next) = schedule.upcoming(Local).take(1).next() {
+        Some(next.format("%Y-%m-%d %H:%M:%S").to_string())
+    } else {
+        None
+    }
+}
+
 pub async fn home_dashboard(
     State(state): State<AppState>,
     Query(params): Query<TimeRangeQuery>,
@@ -273,9 +309,12 @@ pub async fn home_dashboard(
         }
     };
 
+    let next_speedtest = get_next_scheduled_test();
+
     HomeDashboardTemplate {
         latest_results,
         stats,
         time_range: params.range.clone(),
+        next_speedtest,
     }
 }
