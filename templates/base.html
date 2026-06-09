@@ -8,10 +8,32 @@
     <link href="/css/rust-app.css" rel="stylesheet">
     {% block extra_head %}{% endblock %}
     <script>
-        // Dark mode support
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark')
+        // Theme management - make functions global so they're accessible everywhere
+        window.getTheme = function() {
+            return localStorage.getItem('theme') || 'system';
         }
+        
+        window.getEffectiveTheme = function(theme) {
+            if (theme === 'system') {
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            return theme;
+        }
+        
+        window.applyTheme = function(theme) {
+            const effectiveTheme = window.getEffectiveTheme(theme);
+            if (effectiveTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+        
+        // Apply theme on load
+        const initialTheme = window.getTheme();
+        console.log('Initial theme on page load:', initialTheme);
+        window.applyTheme(initialTheme);
+        console.log('Initial theme applied. Document has dark class:', document.documentElement.classList.contains('dark'));
     </script>
     {% block extra_styles %}{% endblock %}
 </head>
@@ -31,6 +53,43 @@
                         <a href="/admin/api-tokens" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition">{{ "api_tokens.label"|t }}</a>
                         <a href="/logout" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition">{{ "general.logout"|t }}</a>
                     </nav>
+                    
+                    <!-- Theme Switcher -->
+                    <div class="flex items-center gap-1 p-1 rounded-lg bg-blue-700 dark:bg-blue-800">
+                        <button
+                            id="lightModeBtn"
+                            type="button"
+                            class="p-2 rounded-md transition-all"
+                            aria-label="Light mode"
+                            title="Light mode"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
+                        </button>
+                        <button
+                            id="darkModeBtn"
+                            type="button"
+                            class="p-2 rounded-md transition-all"
+                            aria-label="Dark mode"
+                            title="Dark mode"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                            </svg>
+                        </button>
+                        <button
+                            id="systemModeBtn"
+                            type="button"
+                            class="p-2 rounded-md transition-all"
+                            aria-label="System theme"
+                            title="System theme"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </button>
+                    </div>
                     
                     <!-- Language Switcher -->
                     <div class="relative language-switcher">
@@ -123,6 +182,63 @@
                 localeElement.textContent = displayLocale;
                 console.log('Set language display to:', displayLocale);
             }
+        });
+    </script>
+
+    <script>
+        // Theme switcher
+        document.addEventListener('DOMContentLoaded', function() {
+            const lightBtn = document.getElementById('lightModeBtn');
+            const darkBtn = document.getElementById('darkModeBtn');
+            const systemBtn = document.getElementById('systemModeBtn');
+            
+            function updateThemeButtons(theme) {
+                const activeClass = 'bg-white/20 shadow-sm';
+                
+                // Remove active class from all buttons
+                [lightBtn, darkBtn, systemBtn].forEach(btn => {
+                    if (btn) btn.className = btn.className.replace(activeClass, '').trim() + ' p-2 rounded-md transition-all';
+                });
+                
+                // Add active class to selected button
+                if (theme === 'light' && lightBtn) {
+                    lightBtn.className += ' ' + activeClass;
+                } else if (theme === 'dark' && darkBtn) {
+                    darkBtn.className += ' ' + activeClass;
+                } else if (theme === 'system' && systemBtn) {
+                    systemBtn.className += ' ' + activeClass;
+                }
+            }
+            
+            function setTheme(theme) {
+                console.log('Setting theme to:', theme);
+                localStorage.setItem('theme', theme);
+                window.applyTheme(theme);
+                updateThemeButtons(theme);
+                console.log('Theme applied. Document has dark class:', document.documentElement.classList.contains('dark'));
+            }
+            
+            // Initialize button states
+            const currentTheme = window.getTheme();
+            updateThemeButtons(currentTheme);
+            
+            // Add click handlers
+            if (lightBtn) {
+                lightBtn.addEventListener('click', () => setTheme('light'));
+            }
+            if (darkBtn) {
+                darkBtn.addEventListener('click', () => setTheme('dark'));
+            }
+            if (systemBtn) {
+                systemBtn.addEventListener('click', () => setTheme('system'));
+            }
+            
+            // Listen for system theme changes when in system mode
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (window.getTheme() === 'system') {
+                    window.applyTheme('system');
+                }
+            });
         });
     </script>
 
