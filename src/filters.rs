@@ -1,6 +1,7 @@
 /// Askama template filters for translations and formatting
 use askama::Result;
 use rust_i18n::t;
+use chrono::NaiveDateTime;
 
 /// Translate a key using the current locale
 /// Usage: {{ "general.save"|t }}
@@ -18,4 +19,10 @@ pub fn t_or(key: &str, fallback: &str) -> Result<String> {
     } else {
         Ok(result.to_string())
     }
+}
+
+/// Format a NaiveDateTime as ISO 8601 for client-side formatting
+/// Usage: {{ some_date|iso_datetime }}
+pub fn iso_datetime(dt: &NaiveDateTime) -> Result<String> {
+    Ok(dt.format("%Y-%m-%dT%H:%M:%S").to_string())
 }

@@ -86,12 +86,12 @@
                     </td>
                     <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                         {% if let Some(used) = token.last_used_at %}
-                        {{ used.format("%Y-%m-%d %H:%M") }}
+                        <span data-datetime="{{ used|iso_datetime }}" data-format="datetime-pretty"></span>
                         {% else %}
                         Never
                         {% endif %}
                     </td>
-                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ token.created_at.format("%Y-%m-%d") }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400"><span data-datetime="{{ token.created_at|iso_datetime }}" data-format="date-pretty"></span></td>
                     <td class="px-4 py-3">
                         <div class="flex gap-2">
                             <a 

@@ -2,7 +2,7 @@ use crate::{AppState, db::Database, filters, models::Result as SpeedTestResult};
 use askama_axum::Template;
 use axum::extract::{Query, State};
 use serde::Deserialize;
-use chrono::Local;
+use chrono::{Local, NaiveDateTime};
 use std::env;
 use std::str::FromStr;
 
@@ -12,7 +12,7 @@ pub struct HomeDashboardTemplate {
     pub latest_results: Vec<SpeedTestResult>,
     pub stats: DashboardStats,
     pub time_range: String,
-    pub next_speedtest: Option<String>,
+    pub next_speedtest: Option<NaiveDateTime>,
 }
 
 pub struct DashboardStats {
@@ -40,7 +40,7 @@ fn default_time_range() -> String {
     "24h".to_string()
 }
 
-fn get_next_scheduled_test() -> Option<String> {
+fn get_next_scheduled_test() -> Option<NaiveDateTime> {
     let schedule_expr = env::var("SPEEDTEST_SCHEDULE").ok()?;
     
     if schedule_expr.is_empty() {
@@ -63,9 +63,9 @@ fn get_next_scheduled_test() -> Option<String> {
         }
     };
 
-    // Get the next run time
+    // Get the next run time and convert to NaiveDateTime
     if let Some(next) = schedule.upcoming(Local).take(1).next() {
-        Some(next.format("%Y-%m-%d %H:%M:%S").to_string())
+        Some(next.naive_local())
     } else {
         None
     }
@@ -142,7 +142,7 @@ pub async fn home_dashboard(
             let chart_data = chart_results
                 .iter()
                 .map(|r| ChartDataPoint {
-                    timestamp: r.created_at.format("%Y-%m-%d %H:%M").to_string(),
+                    timestamp: r.created_at.format("%Y-%m-%dT%H:%M:%S").to_string(),
                     download: r.download_mbps(),
                     upload: r.upload_mbps(),
                     ping: r.ping.unwrap_or(0.0),
@@ -216,7 +216,7 @@ pub async fn home_dashboard(
             let chart_data = chart_results
                 .iter()
                 .map(|r| ChartDataPoint {
-                    timestamp: r.created_at.format("%Y-%m-%d %H:%M").to_string(),
+                    timestamp: r.created_at.format("%Y-%m-%dT%H:%M:%S").to_string(),
                     download: r.download_mbps(),
                     upload: r.upload_mbps(),
                     ping: r.ping.unwrap_or(0.0),
@@ -290,7 +290,7 @@ pub async fn home_dashboard(
             let chart_data = chart_results
                 .iter()
                 .map(|r| ChartDataPoint {
-                    timestamp: r.created_at.format("%Y-%m-%d %H:%M").to_string(),
+                    timestamp: r.created_at.format("%Y-%m-%dT%H:%M:%S").to_string(),
                     download: r.download_mbps(),
                     upload: r.upload_mbps(),
                     ping: r.ping.unwrap_or(0.0),

@@ -178,7 +178,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
     </svg>
     <p style="margin: 0; font-size: 0.875rem;">
-        <strong>{{ "next_speedtest_at"|t }}:</strong> {{ next_test }}
+        <strong>{{ "next_speedtest_at"|t }}:</strong> <span data-datetime="{{ next_test|iso_datetime }}" data-format="datetime-pretty"></span>
     </p>
 </div>
 {% endif %}
@@ -238,7 +238,7 @@
                 <div class="test-metric-value">{{ format!("{:.1}", result.ping.unwrap_or(0.0)) }} ms</div>
             </div>
             <div class="test-date">
-                {{ result.created_at.format("%Y-%m-%d %H:%M") }}
+                <span data-datetime="{{ result.created_at|iso_datetime }}" data-format="datetime-pretty"></span>
             </div>
             <div>
                 <span class="status-badge status-{{ result.status.to_lowercase() }}">{{ result.status }}</span>
@@ -271,7 +271,7 @@
         {% endfor %}
     ];
 
-    const labels = chartData.map(d => d.timestamp);
+    const labels = chartData.map(d => window.formatChartDateTime ? window.formatChartDateTime(d.timestamp) : d.timestamp);
     const downloads = chartData.map(d => d.download);
     const uploads = chartData.map(d => d.upload);
     const pings = chartData.map(d => d.ping);

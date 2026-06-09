@@ -80,7 +80,7 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {% if let Some(last_run) = schedule.last_run_at %}
-                        {{ last_run.format("%Y-%m-%d %H:%M") }}
+                        <span data-datetime="{{ last_run|iso_datetime }}" data-format="datetime-pretty"></span>
                         {% else %}
                         {{ "general.never"|t }}
                         {% endif %}

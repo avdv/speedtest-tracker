@@ -34,6 +34,168 @@
         console.log('Initial theme on page load:', initialTheme);
         window.applyTheme(initialTheme);
         console.log('Initial theme applied. Document has dark class:', document.documentElement.classList.contains('dark'));
+        
+        // Date/Time formatting utilities
+        window.getUserLocale = function() {
+            // Get locale from cookie
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'locale') {
+                    // Convert our locale format to BCP 47 format
+                    return value.replace('_', '-');
+                }
+            }
+            // Fallback to browser locale
+            return navigator.language || 'en';
+        }
+        
+        // Format datetime according to user's locale and timezone
+        window.formatDateTime = function(isoString, options = {}) {
+            try {
+                // Parse the ISO string assuming it's in UTC
+                const date = new Date(isoString + 'Z');
+                const locale = window.getUserLocale();
+                
+                // Determine if we should use 12-hour format (for English locales)
+                const use12Hour = locale.startsWith('en');
+                
+                // Default options for datetime formatting
+                const defaultOptions = {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: use12Hour
+                };
+                
+                const formatOptions = { ...defaultOptions, ...options };
+                return new Intl.DateTimeFormat(locale, formatOptions).format(date);
+            } catch (e) {
+                console.error('Error formatting date:', e);
+                return isoString;
+            }
+        }
+        
+        // Format date only (no time)
+        window.formatDate = function(isoString) {
+            return window.formatDateTime(isoString, {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: undefined,
+                minute: undefined,
+                second: undefined
+            });
+        }
+        
+        // Format date in human-readable format like "Jun 6, 2026"
+        window.formatDatePretty = function(isoString) {
+            return window.formatDateTime(isoString, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: undefined,
+                minute: undefined,
+                second: undefined
+            });
+        }
+        
+        // Format datetime in human-readable format like "Jun 6, 2026, 2:30 PM"
+        window.formatDateTimePretty = function(isoString) {
+            const locale = window.getUserLocale();
+            const use12Hour = locale.startsWith('en');
+            
+            return window.formatDateTime(isoString, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: undefined,
+                hour12: use12Hour
+            });
+        }
+        
+        // Format with long month name like "June 6, 2026"
+        window.formatDateLong = function(isoString) {
+            return window.formatDateTime(isoString, {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: undefined,
+                minute: undefined,
+                second: undefined
+            });
+        }
+        
+        // Format time only (no date)
+        window.formatTime = function(isoString) {
+            const locale = window.getUserLocale();
+            const use12Hour = locale.startsWith('en');
+            
+            return window.formatDateTime(isoString, {
+                year: undefined,
+                month: undefined,
+                day: undefined,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: use12Hour
+            });
+        }
+        
+        // Format datetime for chart labels (shorter format)
+        window.formatChartDateTime = function(isoString) {
+            const locale = window.getUserLocale();
+            const use12Hour = locale.startsWith('en');
+            
+            return window.formatDateTime(isoString, {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                year: undefined,
+                second: undefined,
+                hour12: use12Hour
+            });
+        }
+        
+        // Auto-format all elements with data-datetime attribute
+        window.formatAllDateTimes = function() {
+            document.querySelectorAll('[data-datetime]').forEach(element => {
+                const isoString = element.getAttribute('data-datetime');
+                const format = element.getAttribute('data-format') || 'datetime';
+                
+                let formatted;
+                switch (format) {
+                    case 'date':
+                        formatted = window.formatDate(isoString);
+                        break;
+                    case 'date-pretty':
+                        formatted = window.formatDatePretty(isoString);
+                        break;
+                    case 'date-long':
+                        formatted = window.formatDateLong(isoString);
+                        break;
+                    case 'datetime-pretty':
+                        formatted = window.formatDateTimePretty(isoString);
+                        break;
+                    case 'time':
+                        formatted = window.formatTime(isoString);
+                        break;
+                    case 'chart':
+                        formatted = window.formatChartDateTime(isoString);
+                        break;
+                    default:
+                        formatted = window.formatDateTime(isoString);
+                }
+                
+                element.textContent = formatted;
+            });
+        }
     </script>
     {% block extra_styles %}{% endblock %}
 </head>
@@ -181,6 +343,11 @@
             if (localeElement) {
                 localeElement.textContent = displayLocale;
                 console.log('Set language display to:', displayLocale);
+            }
+            
+            // Format all datetime elements
+            if (window.formatAllDateTimes) {
+                window.formatAllDateTimes();
             }
         });
     </script>
