@@ -2,6 +2,7 @@
 pub mod api;
 pub mod auth;
 pub mod db;
+pub mod embedded_assets;
 pub mod filters;
 pub mod handlers;
 pub mod i18n;
@@ -19,7 +20,6 @@ use axum::{
     Router, middleware,
     routing::{get, post},
 };
-use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
 #[derive(Clone)]
@@ -68,8 +68,8 @@ pub async fn create_app(state: AppState) -> Router {
         .route("/api/healthcheck", get(api::healthcheck))
         .route("/api/speedtest/latest", get(api::legacy_latest))
         .nest("/api/v1", api_v1_routes)
-        .nest_service("/css", ServeDir::new("public/css"))
-        .nest_service("/js", ServeDir::new("public/js"))
+        .route("/css/*path", get(embedded_assets::serve_css))
+        .route("/js/*path", get(embedded_assets::serve_js))
         .with_state(state)
         .layer(TraceLayer::new_for_http())
 }

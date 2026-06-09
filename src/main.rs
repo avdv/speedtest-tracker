@@ -1,6 +1,7 @@
 mod api;
 mod auth;
 mod db;
+mod embedded_assets;
 pub mod filters;
 mod handlers;
 mod i18n;
@@ -16,7 +17,6 @@ use axum::{
     Router, middleware,
     routing::{get, post},
 };
-use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 use tower_sessions::{Expiry, SessionManagerLayer};
 #[cfg(feature = "mysql")]
@@ -188,32 +188,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Protected API v1 routes
         .nest("/api/v1", api_v1_routes)
         // Static file serving
-        .route(
-            "/favicon.ico",
-            get(|| async {
-                use axum::body::Body;
-                use axum::http::{StatusCode, header};
-                use axum::response::Response;
-
-                match tokio::fs::read("public/favicon.ico").await {
-                    Ok(contents) => Response::builder()
-                        .status(StatusCode::OK)
-                        .header(header::CONTENT_TYPE, "image/x-icon")
-                        .body(Body::from(contents))
-                        .unwrap(),
-                    Err(e) => {
-                        tracing::error!("Error reading favicon.ico: {}", e);
-                        Response::builder()
-                            .status(StatusCode::NOT_FOUND)
-                            .body(Body::empty())
-                            .unwrap()
-                    }
-                }
-            }),
-        )
-        .nest_service("/css", ServeDir::new("public/css"))
-        .nest_service("/js", ServeDir::new("public/js"))
-        .nest_service("/fonts", ServeDir::new("public/fonts"))
+        .route("/favicon.ico", get(embedded_assets::serve_favicon))
+        .route("/css/*path", get(embedded_assets::serve_css))
+        .route("/js/*path", get(embedded_assets::serve_js))
+        .route("/fonts/*path", get(embedded_assets::serve_fonts))
         .layer(middleware::from_fn(locale_middleware::locale_middleware))
         .layer(session_layer)
         .layer(TraceLayer::new_for_http())

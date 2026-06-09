@@ -48,6 +48,8 @@ tokio-cron-scheduler = "0.13"
 cron = "0.12"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 rust-i18n = "3"
+rust-embed = { version = "8", features = ["include-exclude"] }
+mime_guess = "2"
 
 [profile.release]
 strip = true
