@@ -1,4 +1,4 @@
-/// This module provides i18n utilities for the speedtest-tracker application
+//! This module provides i18n utilities for the speedtest-tracker application
 
 /// Normalize locale string to match available translations
 pub fn normalize_locale(lang: &str) -> String {
@@ -13,11 +13,10 @@ pub fn normalize_locale(lang: &str) -> String {
         "nl" | "nl-nl" | "nl-be" => "nl_NL".to_string(),
         "pt-br" | "pt_br" => "pt_BR".to_string(),
         // If already in our format, check if valid and return as-is
-        s if s == "de_de" => "de_DE".to_string(),
-        s if s == "es_es" => "es_ES".to_string(),
-        s if s == "fr_fr" => "fr_FR".to_string(),
-        s if s == "nl_nl" => "nl_NL".to_string(),
-        s if s == "pt_br" => "pt_BR".to_string(),
+        "de_de" => "de_DE".to_string(),
+        "es_es" => "es_ES".to_string(),
+        "fr_fr" => "fr_FR".to_string(),
+        "nl_nl" => "nl_NL".to_string(),
         _ => "en".to_string(),
     }
 }
@@ -28,6 +27,7 @@ pub fn is_valid_locale(locale: &str) -> bool {
 }
 
 /// Get list of all available locales with their display names
+#[allow(dead_code)]
 pub fn available_locales() -> Vec<(&'static str, &'static str)> {
     vec![
         ("en", "English"),

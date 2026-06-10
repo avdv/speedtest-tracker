@@ -69,11 +69,7 @@ fn get_next_scheduled_test() -> Option<NaiveDateTime> {
     };
 
     // Get the next run time and convert to NaiveDateTime
-    if let Some(next) = schedule.upcoming(Local).take(1).next() {
-        Some(next.naive_local())
-    } else {
-        None
-    }
+    schedule.upcoming(Local).take(1).next().map(|next| next.naive_local())
 }
 
 pub async fn home_dashboard(
