@@ -1,25 +1,13 @@
-use speedtest_admin::embedded_assets::{CssAssets, JsAssets, FontsAssets, FaviconAsset};
+use speedtest_admin::embedded_assets::{CssAssets, FaviconAsset};
 
 #[test]
 fn test_css_assets_embedded() {
-    let assets: Vec<_> = CssAssets::iter().collect();
-    assert!(!assets.is_empty(), "CSS assets should be embedded");
-    
-    // Check for rust-app.css
+    // Only rust-app.css should be embedded
     let rust_app_css = CssAssets::get("rust-app.css");
     assert!(rust_app_css.is_some(), "rust-app.css should be embedded");
-}
-
-#[test]
-fn test_js_assets_embedded() {
-    let assets: Vec<_> = JsAssets::iter().collect();
-    assert!(!assets.is_empty(), "JS assets should be embedded");
-}
-
-#[test]
-fn test_fonts_assets_embedded() {
-    let assets: Vec<_> = FontsAssets::iter().collect();
-    assert!(!assets.is_empty(), "Font assets should be embedded");
+    
+    let css_data = rust_app_css.unwrap();
+    assert!(!css_data.data.is_empty(), "rust-app.css should have content");
 }
 
 #[test]
@@ -29,4 +17,11 @@ fn test_favicon_embedded() {
     
     let favicon_data = favicon.unwrap();
     assert!(!favicon_data.data.is_empty(), "favicon.ico should have content");
+}
+
+#[test]
+fn test_filament_assets_not_embedded() {
+    // Verify Filament assets are NOT embedded
+    let filament_css = CssAssets::get("filament/filament/app.css");
+    assert!(filament_css.is_none(), "Filament CSS should not be embedded");
 }

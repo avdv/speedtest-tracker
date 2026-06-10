@@ -190,8 +190,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Static file serving
         .route("/favicon.ico", get(embedded_assets::serve_favicon))
         .route("/css/*path", get(embedded_assets::serve_css))
-        .route("/js/*path", get(embedded_assets::serve_js))
-        .route("/fonts/*path", get(embedded_assets::serve_fonts))
         .layer(middleware::from_fn(locale_middleware::locale_middleware))
         .layer(session_layer)
         .layer(TraceLayer::new_for_http())

@@ -69,7 +69,6 @@ pub async fn create_app(state: AppState) -> Router {
         .route("/api/speedtest/latest", get(api::legacy_latest))
         .nest("/api/v1", api_v1_routes)
         .route("/css/*path", get(embedded_assets::serve_css))
-        .route("/js/*path", get(embedded_assets::serve_js))
         .with_state(state)
         .layer(TraceLayer::new_for_http())
 }

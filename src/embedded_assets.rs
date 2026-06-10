@@ -7,16 +7,8 @@ use rust_embed::RustEmbed;
 
 #[derive(RustEmbed)]
 #[folder = "public/css"]
-#[exclude = "filament/"]
+#[include = "rust-app.css"]
 pub struct CssAssets;
-
-#[derive(RustEmbed)]
-#[folder = "public/js"]
-pub struct JsAssets;
-
-#[derive(RustEmbed)]
-#[folder = "public/fonts"]
-pub struct FontsAssets;
 
 #[derive(RustEmbed)]
 #[folder = "public"]
@@ -25,14 +17,6 @@ pub struct FaviconAsset;
 
 pub async fn serve_css(path: axum::extract::Path<String>) -> impl IntoResponse {
     serve_embedded_file::<CssAssets>(&path)
-}
-
-pub async fn serve_js(path: axum::extract::Path<String>) -> impl IntoResponse {
-    serve_embedded_file::<JsAssets>(&path)
-}
-
-pub async fn serve_fonts(path: axum::extract::Path<String>) -> impl IntoResponse {
-    serve_embedded_file::<FontsAssets>(&path)
 }
 
 pub async fn serve_favicon() -> impl IntoResponse {
