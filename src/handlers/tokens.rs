@@ -1,15 +1,17 @@
 use crate::{filters, AppState, db::Database, models::PersonalAccessToken};
-use askama_axum::Template;
+use crate::locale_middleware::Locale;
+use askama::Template;
 use axum::{
     Form,
     extract::{Query, State},
-    response::{IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Redirect, Response},
 };
 use serde::Deserialize;
 
 #[derive(Template)]
 #[template(path = "pages/api-tokens.html")]
 pub struct ApiTokensTemplate {
+    pub locale: String,
     pub tokens: Vec<PersonalAccessToken>,
     pub message: Option<String>,
     pub new_token: Option<String>,
@@ -18,8 +20,9 @@ pub struct ApiTokensTemplate {
 
 pub async fn api_tokens_page(
     State(state): State<AppState>,
+    locale: Locale,
     Query(params): Query<std::collections::HashMap<String, String>>,
-) -> ApiTokensTemplate {
+) -> Response {
     let message = if params.contains_key("deleted") {
         Some("Token deleted successfully!".to_string())
     } else if params.contains_key("error") {
@@ -55,11 +58,17 @@ pub async fn api_tokens_page(
         .unwrap_or_default(),
     };
 
-    ApiTokensTemplate {
+    let template = ApiTokensTemplate {
+        locale: locale.0,
         tokens,
         message,
         new_token,
         new_token_name,
+    };
+    
+    match template.render() {
+        Ok(html) => Html(html).into_response(),
+        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }
 }
 
@@ -230,12 +239,14 @@ pub async fn delete_token(
 #[derive(Template)]
 #[template(path = "pages/edit-token.html")]
 pub struct EditTokenTemplate {
+    locale: String,
     token: PersonalAccessToken,
     error: Option<String>,
 }
 
 pub async fn edit_token_page(
     State(state): State<AppState>,
+    locale: Locale,
     axum::extract::Path(token_id): axum::extract::Path<i64>,
 ) -> Response {
     let token = match &state.db {
@@ -269,7 +280,13 @@ pub async fn edit_token_page(
     };
 
     match token {
-        Ok(Some(token)) => EditTokenTemplate { token, error: None }.into_response(),
+        Ok(Some(token)) => {
+            let template = EditTokenTemplate { locale: locale.0, token, error: None };
+            match template.render() {
+                Ok(html) => Html(html).into_response(),
+                Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+            }
+        },
         _ => Redirect::to("/admin/api-tokens").into_response(),
     }
 }

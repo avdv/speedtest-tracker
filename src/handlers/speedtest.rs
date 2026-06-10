@@ -1,24 +1,33 @@
 use crate::{filters, AppState, db::Database, models::Result as SpeedTestResult};
-use askama_axum::Template;
+use crate::locale_middleware::Locale;
+use askama::Template;
 use axum::{
     Form, Json,
     extract::State,
     http::StatusCode,
-    response::{IntoResponse, Response},
+    response::{Html, IntoResponse, Response},
 };
 
 #[derive(Template)]
 #[template(path = "pages/run-test.html")]
 pub struct RunTestTemplate {
+    pub locale: String,
     pub servers: Vec<crate::api::OoklaServer>,
 }
 
-pub async fn run_test_page() -> RunTestTemplate {
+#[axum::debug_handler]
+pub async fn run_test_page(locale: Locale) -> Response {
     // Fetch server list (can be cached in production)
     let servers = crate::api::fetch_ookla_servers().await.unwrap_or_default();
 
-    RunTestTemplate {
+    let template = RunTestTemplate {
+        locale: locale.0,
         servers: servers.into_iter().take(50).collect(), // Limit to top 50
+    };
+    
+    match template.render() {
+        Ok(html) => Html(html).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }
 }
 

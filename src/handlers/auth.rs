@@ -1,20 +1,29 @@
 use crate::{filters, AppState, db::Database};
-use askama_axum::Template;
+use crate::locale_middleware::Locale;
+use askama::Template;
 use axum::{
     Form,
     extract::State,
-    response::{IntoResponse, Redirect, Response},
+    response::{IntoResponse, Redirect, Response, Html},
 };
 use serde::Deserialize;
 
 #[derive(Template)]
 #[template(path = "login.html")]
 pub struct LoginTemplate {
+    locale: String,
     error: Option<String>,
 }
 
-pub async fn login_page() -> LoginTemplate {
-    LoginTemplate { error: None }
+pub async fn login_page(locale: Locale) -> Response {
+    let template = LoginTemplate { 
+        locale: locale.0,
+        error: None 
+    };
+    match template.render() {
+        Ok(html) => Html(html).into_response(),
+        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+    }
 }
 
 #[derive(Deserialize)]
@@ -26,6 +35,7 @@ pub struct LoginForm {
 pub async fn login_post(
     State(state): State<AppState>,
     session: tower_sessions::Session,
+    locale: Locale,
     Form(form): Form<LoginForm>,
 ) -> Response {
     tracing::debug!("Login attempt for email: {}", form.email);
@@ -89,10 +99,14 @@ pub async fn login_post(
 
                 if let Err(e) = crate::session::set_user_session(session, user.id).await {
                     tracing::error!("Failed to set session: {}", e);
-                    return LoginTemplate {
+                    let template = LoginTemplate {
+                        locale: locale.0.clone(),
                         error: Some(format!("Login failed - session error: {}", e)),
-                    }
-                    .into_response();
+                    };
+                    return match template.render() {
+                        Ok(html) => Html(html).into_response(),
+                        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+                    };
                 }
 
                 tracing::info!(
@@ -113,10 +127,14 @@ pub async fn login_post(
         tracing::debug!("User not found");
     }
 
-    LoginTemplate {
+    let template = LoginTemplate {
+        locale: locale.0,
         error: Some("Invalid credentials".to_string()),
+    };
+    match template.render() {
+        Ok(html) => Html(html).into_response(),
+        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }
-    .into_response()
 }
 
 pub async fn logout(session: tower_sessions::Session) -> Response {

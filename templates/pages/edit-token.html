@@ -1,6 +1,6 @@
 {% extends "../base.html" %}
 
-{% block title %}{{ "general.edit"|t }} {{ "api_tokens.api_token"|t }} - {{ "general.speedtest_tracker"|t }}{% endblock %}
+{% block title %}{{ "general.edit"|t(locale) }} {{ "api_tokens.api_token"|t(locale) }} - {{ "general.speedtest_tracker"|t(locale) }}{% endblock %}
 
 {% block content %}
 <a href="/admin/api-tokens" class="inline-block mb-6 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition">
@@ -8,7 +8,7 @@
 </a>
 
 <div class="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-6 max-w-2xl">
-    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">{{ "general.edit"|t }} {{ "api_tokens.api_token"|t }}</h2>
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">{{ "general.edit"|t(locale) }} {{ "api_tokens.api_token"|t(locale) }}</h2>
     
     {% if let Some(err) = error %}
     <div class="bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-200 p-4 rounded-lg mb-6">
@@ -21,7 +21,7 @@
         
         <div>
             <label for="name" class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                {{ "general.name"|t }}
+                {{ "general.name"|t(locale) }}
             </label>
             <input 
                 type="text" 
@@ -37,7 +37,7 @@
         
         <div>
             <label class="block mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                {{ "api_tokens.abilities"|t }}
+                {{ "api_tokens.abilities"|t(locale) }}
             </label>
             <div class="space-y-4">
                 {% if let Some(abilities_str) = self.token.abilities.as_ref() %}
@@ -51,9 +51,9 @@
                         class="mt-1 w-4 h-4 text-blue-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500">
                     <div class="flex-1">
                         <label for="ability1" class="block font-medium text-gray-900 dark:text-gray-100">
-                            {{ "api_tokens.read_results"|t }}
+                            {{ "api_tokens.read_results"|t(locale) }}
                         </label>
-                        <small class="text-sm text-gray-600 dark:text-gray-400">{{ "api_tokens.read_results_description"|t }}</small>
+                        <small class="text-sm text-gray-600 dark:text-gray-400">{{ "api_tokens.read_results_description"|t(locale) }}</small>
                     </div>
                 </div>
                 
@@ -67,9 +67,9 @@
                         class="mt-1 w-4 h-4 text-blue-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500">
                     <div class="flex-1">
                         <label for="ability2" class="block font-medium text-gray-900 dark:text-gray-100">
-                            {{ "general.run_speedtest"|t }}
+                            {{ "general.run_speedtest"|t(locale) }}
                         </label>
-                        <small class="text-sm text-gray-600 dark:text-gray-400">{{ "api_tokens.run_speedtest_description"|t }}</small>
+                        <small class="text-sm text-gray-600 dark:text-gray-400">{{ "api_tokens.run_speedtest_description"|t(locale) }}</small>
                     </div>
                 </div>
                 
@@ -83,9 +83,9 @@
                         class="mt-1 w-4 h-4 text-blue-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500">
                     <div class="flex-1">
                         <label for="ability3" class="block font-medium text-gray-900 dark:text-gray-100">
-                            {{ "general.list_servers"|t }}
+                            {{ "general.list_servers"|t(locale) }}
                         </label>
-                        <small class="text-sm text-gray-600 dark:text-gray-400">{{ "api_tokens.list_servers_description"|t }}</small>
+                        <small class="text-sm text-gray-600 dark:text-gray-400">{{ "api_tokens.list_servers_description"|t(locale) }}</small>
                     </div>
                 </div>
                 {% else %}
@@ -99,9 +99,9 @@
                         class="mt-1 w-4 h-4 text-blue-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500">
                     <div class="flex-1">
                         <label for="ability1" class="block font-medium text-gray-900 dark:text-gray-100">
-                            {{ "api_tokens.read_results"|t }}
+                            {{ "api_tokens.read_results"|t(locale) }}
                         </label>
-                        <small class="text-sm text-gray-600 dark:text-gray-400">{{ "api_tokens.read_results_description"|t }}</small>
+                        <small class="text-sm text-gray-600 dark:text-gray-400">{{ "api_tokens.read_results_description"|t(locale) }}</small>
                     </div>
                 </div>
                 {% endif %}
@@ -112,7 +112,7 @@
             type="submit"
             class="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 
                    text-white font-semibold px-6 py-3 rounded-lg transition">
-            {{ "general.save"|t }}
+            {{ "general.save"|t(locale) }}
         </button>
     </form>
 </div>

@@ -1,6 +1,6 @@
 {% extends "../base.html" %}
 
-{% block title %}{{ "dashboard.title"|t }} - Speedtest Tracker{% endblock %}
+{% block title %}{{ "dashboard.title"|t(locale) }} - Speedtest Tracker{% endblock %}
 
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -178,39 +178,39 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
     </svg>
     <p style="margin: 0; font-size: 0.875rem;">
-        <strong>{{ "next_speedtest_at"|t }}:</strong> <span data-datetime="{{ next_test|iso_datetime }}" data-format="datetime-pretty"></span>
+        <strong>{{ "next_speedtest_at"|t(locale) }}:</strong> <span data-datetime="{{ next_test|iso_datetime }}" data-format="datetime-pretty"></span>
     </p>
 </div>
 {% endif %}
 
 <div class="time-selector">
-    <a href="/?range=24h" class="{% if self.time_range == "24h" %}active{% endif %}">{{ "dashboard.last_24_hours"|t }}</a>
-    <a href="/?range=week" class="{% if self.time_range == "week" %}active{% endif %}">{{ "dashboard.last_week"|t }}</a>
-    <a href="/?range=month" class="{% if self.time_range == "month" %}active{% endif %}">{{ "dashboard.last_month"|t }}</a>
+    <a href="/?range=24h" class="{% if self.time_range == "24h" %}active{% endif %}">{{ "dashboard.last_24_hours"|t(locale) }}</a>
+    <a href="/?range=week" class="{% if self.time_range == "week" %}active{% endif %}">{{ "dashboard.last_week"|t(locale) }}</a>
+    <a href="/?range=month" class="{% if self.time_range == "month" %}active{% endif %}">{{ "dashboard.last_month"|t(locale) }}</a>
 </div>
 
 <div class="stats">
     <div class="stat-card">
-        <div class="stat-label">{{ "general.total_tests"|t }}</div>
+        <div class="stat-label">{{ "general.total_tests"|t(locale) }}</div>
         <div class="stat-value">{{ self.stats.total_tests }}</div>
     </div>
     <div class="stat-card">
-        <div class="stat-label">{{ "general.average_download"|t }}</div>
-        <div class="stat-value">{{ format!("{:.2}", self.stats.avg_download) }} <span class="stat-unit">{{ "general.mbps"|t }}</span></div>
+        <div class="stat-label">{{ "general.average_download"|t(locale) }}</div>
+        <div class="stat-value">{{ format!("{:.2}", self.stats.avg_download) }} <span class="stat-unit">{{ "general.mbps"|t(locale) }}</span></div>
     </div>
     <div class="stat-card">
-        <div class="stat-label">{{ "general.average_upload"|t }}</div>
-        <div class="stat-value">{{ format!("{:.2}", self.stats.avg_upload) }} <span class="stat-unit">{{ "general.mbps"|t }}</span></div>
+        <div class="stat-label">{{ "general.average_upload"|t(locale) }}</div>
+        <div class="stat-value">{{ format!("{:.2}", self.stats.avg_upload) }} <span class="stat-unit">{{ "general.mbps"|t(locale) }}</span></div>
     </div>
     <div class="stat-card">
-        <div class="stat-label">{{ "general.average_ping"|t }}</div>
+        <div class="stat-label">{{ "general.average_ping"|t(locale) }}</div>
         <div class="stat-value">{{ format!("{:.1}", self.stats.avg_ping) }} <span class="stat-unit">ms</span></div>
     </div>
 </div>
 
 {% if !self.stats.chart_data.is_empty() %}
 <div class="chart-section">
-    <h2>📊 {{ "dashboard.speed_over_time"|t }}</h2>
+    <h2>📊 {{ "dashboard.speed_over_time"|t(locale) }}</h2>
     <div class="chart-container">
         <canvas id="speedChart"></canvas>
     </div>
@@ -221,38 +221,38 @@
 {% endif %}
 
 <div class="recent-tests">
-    <h2>📋 {{ "dashboard.recent_results"|t }}</h2>
+    <h2>📋 {{ "dashboard.recent_results"|t(locale) }}</h2>
     {% if !self.latest_results.is_empty() %}
         {% for result in self.latest_results %}
         <div class="test-item">
             <div class="test-metric">
-                <div class="test-metric-label">{{ "general.download"|t }}</div>
+                <div class="test-metric-label">{{ "general.download"|t(locale) }}</div>
                 <div class="test-metric-value">{{ format!("{:.1}", result.download_mbps()) }} Mbps</div>
             </div>
             <div class="test-metric">
-                <div class="test-metric-label">{{ "general.upload"|t }}</div>
+                <div class="test-metric-label">{{ "general.upload"|t(locale) }}</div>
                 <div class="test-metric-value">{{ format!("{:.1}", result.upload_mbps()) }} Mbps</div>
             </div>
             <div class="test-metric">
-                <div class="test-metric-label">{{ "general.ping"|t }}</div>
+                <div class="test-metric-label">{{ "general.ping"|t(locale) }}</div>
                 <div class="test-metric-value">{{ format!("{:.1}", result.ping.unwrap_or(0.0)) }} ms</div>
             </div>
             <div class="test-date">
                 <span data-datetime="{{ result.created_at|iso_datetime }}" data-format="datetime-pretty"></span>
             </div>
             <div>
-                <span class="status-badge status-{{ result.status.to_lowercase() }}">{{ result.status|translate_status }}</span>
+                <span class="status-badge status-{{ result.status.to_lowercase() }}">{{ result.status|translate_status(locale) }}</span>
             </div>
         </div>
         {% endfor %}
     {% else %}
         <div class="empty-state">
-            <p>{{ "general.no_speed_test_results_yet"|t }}</p>
+            <p>{{ "general.no_speed_test_results_yet"|t(locale) }}</p>
         </div>
     {% endif %}
     
     <div class="view-all">
-        <a href="/admin/results">{{ "dashboard.view_all_results"|t }} →</a>
+        <a href="/admin/results">{{ "dashboard.view_all_results"|t(locale) }} →</a>
     </div>
 </div>
 {% endblock %}
@@ -310,7 +310,7 @@
                 },
                 title: {
                     display: true,
-                    text: '{{ "dashboard.download_upload_speed"|t }}'
+                    text: '{{ "dashboard.download_upload_speed"|t(locale) }}'
                 }
             },
             scales: {
@@ -318,7 +318,7 @@
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: '{{ "general.download_speed"|t }} ({{ "general.mbps"|t }})'
+                        text: '{{ "general.download_speed"|t(locale) }} ({{ "general.mbps"|t(locale) }})'
                     }
                 }
             }
@@ -351,7 +351,7 @@
                 },
                 title: {
                     display: true,
-                    text: '{{ "dashboard.latency_ping"|t }}'
+                    text: '{{ "dashboard.latency_ping"|t(locale) }}'
                 }
             },
             scales: {
@@ -359,7 +359,7 @@
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: '{{ "general.ping"|t }} ({{ "general.ms"|t }})'
+                        text: '{{ "general.ping"|t(locale) }} ({{ "general.ms"|t(locale) }})'
                     }
                 }
             }

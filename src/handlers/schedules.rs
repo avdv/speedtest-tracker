@@ -1,15 +1,17 @@
 use crate::{filters, AppState, db::Database, models::Schedule};
-use askama_axum::Template;
+use crate::locale_middleware::Locale;
+use askama::Template;
 use axum::{
     Form,
     extract::{Query, State},
-    response::{IntoResponse, Redirect},
+    response::{Html, IntoResponse, Redirect, Response},
 };
 use serde::Deserialize;
 
 #[derive(Template)]
 #[template(path = "pages/schedules.html")]
 pub struct SchedulesTemplate {
+    pub locale: String,
     pub schedules: Vec<Schedule>,
     pub servers: Vec<crate::api::OoklaServer>,
     pub message: Option<String>,
@@ -17,8 +19,9 @@ pub struct SchedulesTemplate {
 
 pub async fn schedules_page(
     State(state): State<AppState>,
+    locale: Locale,
     Query(params): Query<std::collections::HashMap<String, String>>,
-) -> SchedulesTemplate {
+) -> Response {
     let message = if params.contains_key("created") {
         Some("Schedule created successfully!".to_string())
     } else if params.contains_key("updated") {
@@ -57,10 +60,16 @@ pub async fn schedules_page(
 
     let servers = crate::api::fetch_ookla_servers().await.unwrap_or_default();
 
-    SchedulesTemplate {
+    let template = SchedulesTemplate {
+        locale: locale.0,
         schedules,
         servers: servers.into_iter().take(100).collect(),
         message,
+    };
+    
+    match template.render() {
+        Ok(html) => Html(html).into_response(),
+        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }
 }
 

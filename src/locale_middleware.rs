@@ -1,30 +1,47 @@
 /// Middleware for locale detection and i18n setup
 use axum::{
-    extract::Request,
-    http::HeaderMap,
+    extract::{Request, FromRequestParts},
+    http::{request::Parts, HeaderMap, StatusCode},
     middleware::Next,
     response::Response,
 };
 use axum_extra::extract::CookieJar;
 
-/// Middleware that detects and sets locale for each request
+/// Locale stored in request extensions
+#[derive(Clone, Debug)]
+pub struct Locale(pub String);
+
+/// Axum extractor for Locale
+#[axum::async_trait]
+impl<S> FromRequestParts<S> for Locale
+where
+    S: Send + Sync,
+{
+    type Rejection = (StatusCode, &'static str);
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        parts
+            .extensions
+            .get::<Locale>()
+            .cloned()
+            .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Locale not found in request extensions"))
+    }
+}
+
+/// Middleware that detects and stores locale in request extensions
 pub async fn locale_middleware(
     cookies: CookieJar,
     headers: HeaderMap,
-    request: Request,
+    mut request: Request,
     next: Next,
 ) -> Response {
     // Detect locale from request (cookie first, then headers)
     let locale = detect_locale(&cookies, &headers);
     
-    tracing::debug!("Setting locale to: {}", locale);
+    tracing::debug!("Detected locale for request: {}", locale);
     
-    // Set locale for this request's thread
-    rust_i18n::set_locale(&locale);
-    
-    // Verify it was set
-    let current_locale = rust_i18n::locale();
-    tracing::debug!("Current locale is now: {}", &*current_locale);
+    // Store locale in request extensions (thread-safe!)
+    request.extensions_mut().insert(Locale(locale));
     
     // Continue with request
     next.run(request).await

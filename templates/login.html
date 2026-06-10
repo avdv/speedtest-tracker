@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ "general.speedtest_tracker"|t }}</title>
+    <title>{{ "general.speedtest_tracker"|t(locale) }}</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link href="/css/rust-app.css" rel="stylesheet">
     <style>
@@ -14,7 +14,7 @@
 </head>
 <body class="h-full flex items-center justify-center antialiased">
     <div class="bg-white dark:bg-gray-900 p-12 rounded-xl shadow-md max-w-md w-full mx-4">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center mb-8">🐇 {{ "general.speedtest_tracker"|t }}</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center mb-8">🐇 {{ "general.speedtest_tracker"|t(locale) }}</h1>
         {% if let Some(err) = error %}
         <div class="bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-200 p-3 rounded-lg mb-6">
             {{ err }}
@@ -23,7 +23,7 @@
         <form method="post" action="/login" class="space-y-6">
             <div>
                 <label for="email" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {{ "general.email"|t }}
+                    {{ "general.email"|t(locale) }}
                 </label>
                 <input 
                     type="email" 
@@ -37,7 +37,7 @@
             </div>
             <div>
                 <label for="password" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {{ "general.password"|t }}
+                    {{ "general.password"|t(locale) }}
                 </label>
                 <input 
                     type="password" 

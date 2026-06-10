@@ -15,13 +15,13 @@
 
 {% block content %}
 <div class="flex items-center justify-between mb-6">
-    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ "results.title"|t }}</h2>
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ "results.title"|t(locale) }}</h2>
     <button 
         id="deleteButton" 
         onclick="confirmDelete()"
         class="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 
                text-white font-semibold px-4 py-2 rounded-lg transition items-center gap-2">
-        <span id="deleteCount"></span> {{ "general.delete_selected"|t }}
+        <span id="deleteCount"></span> {{ "general.delete_selected"|t(locale) }}
     </button>
 </div>
 
@@ -39,22 +39,22 @@
                             class="w-4 h-4 text-blue-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500">
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        {{ "general.date"|t }}
+                        {{ "general.date"|t(locale) }}
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        {{ "general.download"|t }}
+                        {{ "general.download"|t(locale) }}
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        {{ "general.upload"|t }}
+                        {{ "general.upload"|t(locale) }}
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        {{ "general.ping"|t }}
+                        {{ "general.ping"|t(locale) }}
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        {{ "general.server"|t }}
+                        {{ "general.server"|t(locale) }}
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        {{ "general.status"|t }}
+                        {{ "general.status"|t(locale) }}
                     </th>
                 </tr>
             </thead>
@@ -100,12 +100,12 @@
                                     {% when None %}
                                 {% endmatch %}
                             {% when None %}
-                                <span class="text-gray-400 dark:text-gray-500">{{ "general.unknown"|t }}</span>
+                                <span class="text-gray-400 dark:text-gray-500">{{ "general.unknown"|t(locale) }}</span>
                         {% endmatch %}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         <span class="status-badge status-{{ result.status.to_lowercase() }}">
-                            {{ result.status|translate_status }}
+                            {{ result.status|translate_status(locale) }}
                         </span>
                     </td>
                 </tr>
@@ -119,7 +119,7 @@
             <!-- Per page selector -->
             <div class="flex items-center gap-2">
                 <label for="perPageSelect" class="text-sm text-gray-700 dark:text-gray-300">
-                    {{ "results.show"|t }}:
+                    {{ "results.show"|t(locale) }}:
                 </label>
                 <select 
                     id="perPageSelect" 
@@ -133,7 +133,7 @@
                     <option value="100" {% if self.per_page == 100 %}selected{% endif %}>100</option>
                 </select>
                 <span class="text-sm text-gray-700 dark:text-gray-300">
-                    {{ "results.per_page"|t }}
+                    {{ "results.per_page"|t(locale) }}
                 </span>
             </div>
 
@@ -143,20 +143,20 @@
                 <a href="/admin/results?page=1&per_page={{ self.per_page }}" 
                    class="px-3 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg 
                           hover:bg-gray-100 dark:hover:bg-gray-600 font-medium transition text-sm"
-                   title="{{ "results.first_page"|t }}">
-                    « {{ "results.first"|t }}
+                   title="{{ "results.first_page"|t(locale) }}">
+                    « {{ "results.first"|t(locale) }}
                 </a>
                 <a href="/admin/results?page={{ self.page - 1 }}&per_page={{ self.per_page }}" 
                    class="px-3 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg 
                           hover:bg-gray-100 dark:hover:bg-gray-600 font-medium transition text-sm">
-                    ← {{ "general.previous"|t }}
+                    ← {{ "general.previous"|t(locale) }}
                 </a>
                 {% endif %}
                 
                 <!-- Page info and jump -->
                 <div class="flex items-center gap-2">
                     <span class="text-sm text-gray-700 dark:text-gray-300">
-                        {{ "general.page"|t }}
+                        {{ "general.page"|t(locale) }}
                     </span>
                     <input 
                         type="number" 
@@ -169,13 +169,13 @@
                                text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 
                                focus:border-transparent text-sm">
                     <span class="text-sm text-gray-700 dark:text-gray-300">
-                        {{ "results.of"|t }} {{ self.total_pages }}
+                        {{ "results.of"|t(locale) }} {{ self.total_pages }}
                     </span>
                     <button 
                         onclick="jumpToPage()"
                         class="px-3 py-1 bg-blue-600 dark:bg-blue-700 text-white rounded-lg 
                                hover:bg-blue-700 dark:hover:bg-blue-600 font-medium transition text-sm">
-                        {{ "results.go"|t }}
+                        {{ "results.go"|t(locale) }}
                     </button>
                 </div>
 
@@ -183,29 +183,29 @@
                 <a href="/admin/results?page={{ self.page + 1 }}&per_page={{ self.per_page }}" 
                    class="px-3 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg 
                           hover:bg-gray-100 dark:hover:bg-gray-600 font-medium transition text-sm">
-                    {{ "general.next"|t }} →
+                    {{ "general.next"|t(locale) }} →
                 </a>
                 <a href="/admin/results?page={{ self.total_pages }}&per_page={{ self.per_page }}" 
                    class="px-3 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg 
                           hover:bg-gray-100 dark:hover:bg-gray-600 font-medium transition text-sm"
-                   title="{{ "results.last_page"|t }}">
-                    {{ "results.last"|t }} »
+                   title="{{ "results.last_page"|t(locale) }}">
+                    {{ "results.last"|t(locale) }} »
                 </a>
                 {% endif %}
             </div>
 
             <!-- Results count -->
             <div class="text-sm text-gray-700 dark:text-gray-300">
-                {{ "results.showing"|t }} 
+                {{ "results.showing"|t(locale) }} 
                 <span class="font-semibold">{{ ((self.page - 1) * self.per_page + 1) }}</span>-<span class="font-semibold">{% if self.page * self.per_page > self.total_results %}{{ self.total_results }}{% else %}{{ self.page * self.per_page }}{% endif %}</span>
-                {{ "results.of"|t }} 
+                {{ "results.of"|t(locale) }} 
                 <span class="font-semibold">{{ self.total_results }}</span>
             </div>
         </div>
     </div>
     {% else %}
     <div class="text-center py-12 text-gray-500 dark:text-gray-400">
-        <p class="text-lg">{{ "general.no_speed_test_results_yet"|t }}</p>
+        <p class="text-lg">{{ "general.no_speed_test_results_yet"|t(locale) }}</p>
     </div>
     {% endif %}
 </div>

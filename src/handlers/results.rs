@@ -1,15 +1,17 @@
 use crate::{filters, AppState, db::Database, models::Result as SpeedTestResult};
-use askama_axum::Template;
+use crate::locale_middleware::Locale;
+use askama::Template;
 use axum::{
     Form,
     extract::{Query, State},
-    response::{IntoResponse, Redirect},
+    response::{Html, IntoResponse, Redirect, Response},
 };
 use serde::Deserialize;
 
 #[derive(Template)]
 #[template(path = "pages/results.html")]
 pub struct ResultsListTemplate {
+    locale: String,
     results: Vec<SpeedTestResult>,
     page: i64,
     per_page: i64,
@@ -34,8 +36,9 @@ fn default_per_page() -> i64 {
 
 pub async fn results_list(
     State(state): State<AppState>,
+    locale: Locale,
     Query(params): Query<Pagination>,
-) -> ResultsListTemplate {
+) -> Response {
     let offset = (params.page - 1) * params.per_page;
 
     // Get total count
@@ -102,12 +105,18 @@ pub async fn results_list(
         }),
     };
 
-    ResultsListTemplate {
+    let template = ResultsListTemplate {
+        locale: locale.0,
         results,
         page: params.page,
         per_page: params.per_page,
         total_results,
         total_pages,
+    };
+    
+    match template.render() {
+        Ok(html) => Html(html).into_response(),
+        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }
 }
 

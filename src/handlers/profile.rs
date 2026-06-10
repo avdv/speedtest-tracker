@@ -1,21 +1,24 @@
 use crate::{filters, AppState, db::Database};
-use askama_axum::Template;
+use crate::locale_middleware::Locale;
+use askama::Template;
 use axum::{
     Form,
     extract::State,
-    response::{IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Redirect, Response},
 };
 use serde::Deserialize;
 
 #[derive(Template)]
 #[template(path = "pages/profile.html")]
 pub struct ProfileTemplate {
+    pub locale: String,
     pub user: crate::models::User,
     pub message: Option<String>,
 }
 
 pub async fn profile_page(
     State(state): State<AppState>,
+    locale: Locale,
     session: tower_sessions::Session,
 ) -> Response {
     // Get logged-in user from session
@@ -49,11 +52,17 @@ pub async fn profile_page(
     };
 
     match user {
-        Ok(Some(user)) => ProfileTemplate {
-            user,
-            message: None,
-        }
-        .into_response(),
+        Ok(Some(user)) => {
+            let template = ProfileTemplate {
+                locale: locale.0,
+                user,
+                message: None,
+            };
+            match template.render() {
+                Ok(html) => Html(html).into_response(),
+                Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+            }
+        },
         _ => Redirect::to("/login").into_response(),
     }
 }

@@ -1,10 +1,10 @@
 {% extends "../base.html" %}
 
-{% block title %}{{ "general.profile"|t }} - {{ "general.speedtest_tracker"|t }}{% endblock %}
+{% block title %}{{ "general.profile"|t(locale) }} - {{ "general.speedtest_tracker"|t(locale) }}{% endblock %}
 
 {% block content %}
 <div class="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-6 max-w-2xl">
-    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">{{ "general.profile"|t }}</h2>
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">{{ "general.profile"|t(locale) }}</h2>
     
     {% if let Some(msg) = message %}
     <div class="bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 p-4 rounded-lg mb-6">
@@ -15,7 +15,7 @@
     <form method="post" action="/admin/profile" class="space-y-6">
         <div>
             <label for="name" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                {{ "general.name"|t }}
+                {{ "general.name"|t(locale) }}
             </label>
             <input 
                 type="text" 
@@ -31,7 +31,7 @@
         
         <div>
             <label for="email" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                {{ "general.email"|t }}
+                {{ "general.email"|t(locale) }}
             </label>
             <input 
                 type="email" 
@@ -47,7 +47,7 @@
         
         <div>
             <label for="password" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                {{ "general.password"|t }}
+                {{ "general.password"|t(locale) }}
             </label>
             <input 
                 type="password" 
@@ -67,7 +67,7 @@
             type="submit"
             class="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 
                    text-white font-semibold px-6 py-3 rounded-lg transition">
-            {{ "general.save"|t }}
+            {{ "general.save"|t(locale) }}
         </button>
     </form>
 </div>

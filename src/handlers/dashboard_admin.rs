@@ -1,10 +1,15 @@
 use crate::{filters, AppState, db::Database, models::Result as SpeedTestResult};
-use askama_axum::Template;
-use axum::extract::State;
+use crate::locale_middleware::Locale;
+use askama::Template;
+use axum::{
+    extract::State,
+    response::{Html, IntoResponse, Response},
+};
 
 #[derive(Template)]
 #[template(path = "pages/admin.html")]
 pub struct AdminDashboardTemplate {
+    pub locale: String,
     pub stats: AdminStats,
     pub latest_result: Option<SpeedTestResult>,
 }
@@ -15,7 +20,7 @@ pub struct AdminStats {
     pub avg_upload: f64,
     pub avg_ping: f64,
 }
-pub async fn admin_dashboard(State(state): State<AppState>) -> AdminDashboardTemplate {
+pub async fn admin_dashboard(State(state): State<AppState>, locale: Locale) -> Response {
     let (latest_result, stats) = match &state.db {
         #[cfg(feature = "sqlite")]
         Database::Sqlite(pool) => {
@@ -145,8 +150,14 @@ pub async fn admin_dashboard(State(state): State<AppState>) -> AdminDashboardTem
         }
     };
 
-    AdminDashboardTemplate {
+    let template = AdminDashboardTemplate {
+        locale: locale.0,
         stats,
         latest_result,
+    };
+    
+    match template.render() {
+        Ok(html) => Html(html).into_response(),
+        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }
 }

@@ -1,6 +1,10 @@
 use crate::{AppState, db::Database, filters, models::Result as SpeedTestResult};
-use askama_axum::Template;
-use axum::extract::{Query, State};
+use crate::locale_middleware::Locale;
+use askama::Template;
+use axum::{
+    extract::{Query, State},
+    response::{Html, IntoResponse, Response},
+};
 use serde::Deserialize;
 use chrono::{Local, NaiveDateTime};
 use std::env;
@@ -9,6 +13,7 @@ use std::str::FromStr;
 #[derive(Template)]
 #[template(path = "pages/dashboard.html")]
 pub struct HomeDashboardTemplate {
+    pub locale: String,
     pub latest_results: Vec<SpeedTestResult>,
     pub stats: DashboardStats,
     pub time_range: String,
@@ -73,8 +78,9 @@ fn get_next_scheduled_test() -> Option<NaiveDateTime> {
 
 pub async fn home_dashboard(
     State(state): State<AppState>,
+    locale: Locale,
     Query(params): Query<TimeRangeQuery>,
-) -> HomeDashboardTemplate {
+) -> Response {
     let hours_ago = match params.range.as_str() {
         "week" => 24 * 7,
         "month" => 24 * 30,
@@ -311,10 +317,16 @@ pub async fn home_dashboard(
 
     let next_speedtest = get_next_scheduled_test();
 
-    HomeDashboardTemplate {
+    let template = HomeDashboardTemplate {
+        locale: locale.0,
         latest_results,
         stats,
         time_range: params.range.clone(),
         next_speedtest,
+    };
+    
+    match template.render() {
+        Ok(html) => Html(html).into_response(),
+        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }
 }
