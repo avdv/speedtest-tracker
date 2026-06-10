@@ -44,7 +44,7 @@
         <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">{{ "general.status"|t }}</div>
             <div class="text-xl font-semibold">
-                <span class="status-badge status-completed">{{ result.status }}</span>
+                <span class="status-badge status-{{ result.status.to_lowercase() }}">{{ result.status|translate_status }}</span>
             </div>
         </div>
     </div>

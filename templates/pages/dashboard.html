@@ -241,7 +241,7 @@
                 <span data-datetime="{{ result.created_at|iso_datetime }}" data-format="datetime-pretty"></span>
             </div>
             <div>
-                <span class="status-badge status-{{ result.status.to_lowercase() }}">{{ result.status }}</span>
+                <span class="status-badge status-{{ result.status.to_lowercase() }}">{{ result.status|translate_status }}</span>
             </div>
         </div>
         {% endfor %}

@@ -26,3 +26,10 @@ pub fn t_or(key: &str, fallback: &str) -> Result<String> {
 pub fn iso_datetime(dt: &NaiveDateTime) -> Result<String> {
     Ok(dt.format("%Y-%m-%dT%H:%M:%S").to_string())
 }
+
+/// Translate status value (completed, failed, etc.)
+/// Usage: {{ result.status|translate_status }}
+pub fn translate_status(status: &str) -> Result<String> {
+    let key = format!("status.{}", status.to_lowercase());
+    Ok(t!(&key).to_string())
+}
