@@ -25,3 +25,16 @@ fn test_filament_assets_not_embedded() {
     let filament_css = CssAssets::get("filament/filament/app.css");
     assert!(filament_css.is_none(), "Filament CSS should not be embedded");
 }
+
+#[test]
+fn test_asset_metadata() {
+    let css = CssAssets::get("rust-app.css").unwrap();
+    
+    // Verify hash is available
+    let hash = css.metadata.sha256_hash();
+    assert_eq!(hash.len(), 32, "SHA256 hash should be 32 bytes");
+    
+    // Verify last_modified is available (may be None depending on build)
+    // Just checking the method exists and returns Option
+    let _ = css.metadata.last_modified();
+}
