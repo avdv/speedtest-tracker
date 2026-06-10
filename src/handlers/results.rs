@@ -13,6 +13,8 @@ pub struct ResultsListTemplate {
     results: Vec<SpeedTestResult>,
     page: i64,
     per_page: i64,
+    total_results: i64,
+    total_pages: i64,
 }
 
 #[derive(Deserialize)]
@@ -35,6 +37,31 @@ pub async fn results_list(
     Query(params): Query<Pagination>,
 ) -> ResultsListTemplate {
     let offset = (params.page - 1) * params.per_page;
+
+    // Get total count
+    let total_results: i64 = match &state.db {
+        #[cfg(feature = "sqlite")]
+        Database::Sqlite(pool) => sqlx::query_scalar("SELECT COUNT(*) FROM results")
+            .fetch_one(pool)
+            .await
+            .unwrap_or(0),
+        #[cfg(feature = "mysql")]
+        Database::MySql(pool) => sqlx::query_scalar("SELECT COUNT(*) FROM results")
+            .fetch_one(pool)
+            .await
+            .unwrap_or(0),
+        #[cfg(feature = "postgres")]
+        Database::Postgres(pool) => sqlx::query_scalar("SELECT COUNT(*) FROM results")
+            .fetch_one(pool)
+            .await
+            .unwrap_or(0),
+    };
+
+    let total_pages = if total_results > 0 {
+        (total_results + params.per_page - 1) / params.per_page
+    } else {
+        1
+    };
 
     let results = match &state.db {
         #[cfg(feature = "sqlite")]
@@ -79,6 +106,8 @@ pub async fn results_list(
         results,
         page: params.page,
         per_page: params.per_page,
+        total_results,
+        total_pages,
     }
 }
 
