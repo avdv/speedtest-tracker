@@ -209,6 +209,13 @@ result_overview:
   fr_FR: "Aperçu des résultats"
   nl_NL: "Overzicht van resultaten"
   pt_BR: "Visão geral do resultado"
+results.result_details:
+  de_DE: "Ergebnisdetails"
+  en: "Result Details"
+  es_ES: "Detalles del resultado"
+  fr_FR: "Détails du résultat"
+  nl_NL: "Resultaat details"
+  pt_BR: "Detalhes do resultado"
 row:
   de_DE: "{1} :count Zeile|[2,*] :count Zeilen"
   en: "{1} :count row|[2,*] :count rows"

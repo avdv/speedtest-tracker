@@ -145,6 +145,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Admin routes requiring session authentication
     let admin_routes = Router::new()
         .route("/admin", get(handlers::admin_dashboard))
+        .route("/admin/results/test", get(|| async { "Test route works!" }))
+        .route("/admin/results/{id}", get(api::get_result))
         .route("/admin/results", get(handlers::results_list))
         .route("/admin/results/delete", post(handlers::delete_results))
         .route("/admin/profile", get(handlers::profile_page))

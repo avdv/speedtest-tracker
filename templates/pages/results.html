@@ -60,8 +60,9 @@
             </thead>
             <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                 {% for result in self.results %}
-                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition">
-                    <td class="px-6 py-4 whitespace-nowrap">
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer" 
+                    onclick="if(!event.target.type || event.target.type !== 'checkbox') openResultModal({{ result.id }})">
+                    <td class="px-6 py-4 whitespace-nowrap" onclick="event.stopPropagation()">
                         <input 
                             type="checkbox" 
                             name="result_ids" 
@@ -213,6 +214,25 @@
 <form id="deleteForm" method="post" action="/admin/results/delete" style="display: none;">
     <input type="hidden" name="ids" id="deleteIds">
 </form>
+
+<!-- Result Detail Modal -->
+<div id="resultModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-6xl w-full my-8">
+        <div class="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ "results.result_details"|t(locale) }}</h3>
+            <button onclick="closeResultModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex-shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div id="modalContent" class="p-6 max-h-[calc(90vh-80px)] overflow-y-auto">
+            <div class="text-center py-8">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -286,5 +306,229 @@ function handlePageJump(event) {
         jumpToPage();
     }
 }
+
+function openResultModal(id) {
+    const modal = document.getElementById('resultModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    
+    // Fetch result details from admin route (uses session auth)
+    fetch(`/admin/results/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            displayResultDetails(data.data);
+        })
+        .catch(error => {
+            console.error('Error fetching result:', error);
+            document.getElementById('modalContent').innerHTML = '<p class="text-red-600 dark:text-red-400">Error loading result details</p>';
+        });
+}
+
+function closeResultModal() {
+    const modal = document.getElementById('resultModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function displayResultDetails(result) {
+    const modalContent = document.getElementById('modalContent');
+    
+    const downloadMbps = result.download ? (result.download * 8 / 1000000).toFixed(2) : 'N/A';
+    const uploadMbps = result.upload ? (result.upload * 8 / 1000000).toFixed(2) : 'N/A';
+    const ping = result.ping ? result.ping.toFixed(1) : 'N/A';
+    
+    const downloadLatency = result.data?.download?.latency || {};
+    const uploadLatency = result.data?.upload?.latency || {};
+    const pingData = result.data?.ping || {};
+    const packetLoss = result.data?.packetLoss ? result.data.packetLoss.toFixed(2) : 'N/A';
+    
+    modalContent.innerHTML = `
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <!-- Left column: Main results (3 columns) -->
+            <div class="lg:col-span-3 space-y-4">
+                <!-- Overview Section -->
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                    <h4 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">{{ "results.result_overview"|t(locale) }}</h4>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ "general.id"|t(locale) }}</label>
+                            <div class="text-gray-900 dark:text-gray-100">${result.id}</div>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ "general.created_at"|t(locale) }}</label>
+                            <div class="text-gray-900 dark:text-gray-100" data-datetime="${result.created_at}" data-format="datetime-pretty"></div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ "general.download"|t(locale) }}</label>
+                            <div class="text-xl font-bold text-blue-600 dark:text-blue-400">${downloadMbps} Mbps</div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ "general.upload"|t(locale) }}</label>
+                            <div class="text-xl font-bold text-green-600 dark:text-green-400">${uploadMbps} Mbps</div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ "general.ping"|t(locale) }}</label>
+                            <div class="text-xl font-bold text-purple-600 dark:text-purple-400">${ping} ms</div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ "results.packet_loss"|t(locale) }}</label>
+                            <div class="text-gray-900 dark:text-gray-100">${packetLoss}%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Latency Details in Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Download Latency -->
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                        <h4 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">{{ "general.download_latency"|t(locale) }}</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">{{ "general.jitter"|t(locale) }}</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">${downloadLatency.jitter ? downloadLatency.jitter.toFixed(0) + ' ms' : 'N/A'}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">{{ "general.low"|t(locale) }}</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">${downloadLatency.low ? downloadLatency.low.toFixed(0) + ' ms' : 'N/A'}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">{{ "general.high"|t(locale) }}</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">${downloadLatency.high ? downloadLatency.high.toFixed(0) + ' ms' : 'N/A'}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">{{ "results.iqm"|t(locale) }}</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">${downloadLatency.iqm ? downloadLatency.iqm.toFixed(0) + ' ms' : 'N/A'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Upload Latency -->
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                        <h4 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">{{ "general.upload_latency"|t(locale) }}</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">{{ "general.jitter"|t(locale) }}</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">${uploadLatency.jitter ? uploadLatency.jitter.toFixed(0) + ' ms' : 'N/A'}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">{{ "general.low"|t(locale) }}</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">${uploadLatency.low ? uploadLatency.low.toFixed(0) + ' ms' : 'N/A'}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">{{ "general.high"|t(locale) }}</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">${uploadLatency.high ? uploadLatency.high.toFixed(0) + ' ms' : 'N/A'}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">{{ "results.iqm"|t(locale) }}</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">${uploadLatency.iqm ? uploadLatency.iqm.toFixed(0) + ' ms' : 'N/A'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Ping Details -->
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 sm:col-span-2">
+                        <h4 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">{{ "results.ping_details"|t(locale) }}</h4>
+                        <div class="grid grid-cols-3 gap-4 text-sm">
+                            <div>
+                                <span class="block text-gray-600 dark:text-gray-400 mb-1">{{ "general.jitter"|t(locale) }}</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">${pingData.jitter ? pingData.jitter.toFixed(0) + ' ms' : 'N/A'}</span>
+                            </div>
+                            <div>
+                                <span class="block text-gray-600 dark:text-gray-400 mb-1">{{ "general.low"|t(locale) }}</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">${pingData.low ? pingData.low.toFixed(0) + ' ms' : 'N/A'}</span>
+                            </div>
+                            <div>
+                                <span class="block text-gray-600 dark:text-gray-400 mb-1">{{ "general.high"|t(locale) }}</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">${pingData.high ? pingData.high.toFixed(0) + ' ms' : 'N/A'}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                ${result.data?.message ? `
+                <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                    <label class="block text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-2">{{ "general.message"|t(locale) }}</label>
+                    <div class="text-sm text-yellow-900 dark:text-yellow-100 whitespace-pre-wrap">${result.data.message}</div>
+                </div>
+                ` : ''}
+            </div>
+            
+            <!-- Right column: Server & Metadata (2 columns) -->
+            <div class="lg:col-span-2 space-y-4">
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 h-full">
+                    <h4 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{{ "results.server_&_metadata"|t(locale) }}</h4>
+                    <div class="space-y-3 text-sm">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ "results.service"|t(locale) }}</label>
+                            <div class="text-gray-900 dark:text-gray-100">${result.service || 'Ookla'}</div>
+                        </div>
+                        ${result.server_name ? `
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ "results.server_name"|t(locale) }}</label>
+                            <div class="text-gray-900 dark:text-gray-100">${result.server_name}</div>
+                        </div>
+                        ` : ''}
+                        ${result.server_id ? `
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ "results.server_id"|t(locale) }}</label>
+                            <div class="text-gray-900 dark:text-gray-100">${result.server_id}</div>
+                        </div>
+                        ` : ''}
+                        ${result.isp ? `
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ "results.isp"|t(locale) }}</label>
+                            <div class="text-gray-900 dark:text-gray-100">${result.isp}</div>
+                        </div>
+                        ` : ''}
+                        ${result.server_location ? `
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ "results.server_location"|t(locale) }}</label>
+                            <div class="text-gray-900 dark:text-gray-100">${result.server_location}</div>
+                        </div>
+                        ` : ''}
+                        ${result.server_host ? `
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ "results.server_host"|t(locale) }}</label>
+                            <div class="text-gray-900 dark:text-gray-100 break-all">${result.server_host}</div>
+                        </div>
+                        ` : ''}
+                        ${result.comments ? `
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ "general.comment"|t(locale) }}</label>
+                            <div class="text-gray-900 dark:text-gray-100">${result.comments}</div>
+                        </div>
+                        ` : ''}
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ "results.scheduled"|t(locale) }}</label>
+                            <div class="text-gray-900 dark:text-gray-100">${result.scheduled ? '{{ "general.yes"|t(locale) }}' : '{{ "general.no"|t(locale) }}'}</div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ "general.status"|t(locale) }}</label>
+                            <span class="status-badge status-${result.status.toLowerCase()}">${result.status}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Format all datetime elements in the modal
+    window.formatAllDateTimes();
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('resultModal');
+    if (event.target === modal) {
+        closeResultModal();
+    }
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeResultModal();
+    }
+});
 </script>
 {% endblock %}
