@@ -13,6 +13,7 @@ use axum::{
 pub struct RunTestTemplate {
     pub locale: String,
     pub servers: Vec<crate::api::OoklaServer>,
+    pub is_authenticated: bool,
 }
 
 #[axum::debug_handler]
@@ -23,6 +24,7 @@ pub async fn run_test_page(locale: Locale) -> Response {
     let template = RunTestTemplate {
         locale: locale.0,
         servers: servers.into_iter().take(50).collect(), // Limit to top 50
+        is_authenticated: true,
     };
     
     match template.render() {

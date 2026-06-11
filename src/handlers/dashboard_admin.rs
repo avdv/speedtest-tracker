@@ -12,6 +12,7 @@ pub struct AdminDashboardTemplate {
     pub locale: String,
     pub stats: AdminStats,
     pub latest_result: Option<SpeedTestResult>,
+    pub is_authenticated: bool,
 }
 
 pub struct AdminStats {
@@ -154,6 +155,7 @@ pub async fn admin_dashboard(State(state): State<AppState>, locale: Locale) -> R
         locale: locale.0,
         stats,
         latest_result,
+        is_authenticated: true,
     };
     
     match template.render() {

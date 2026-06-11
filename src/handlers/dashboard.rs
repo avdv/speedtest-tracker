@@ -18,6 +18,7 @@ pub struct HomeDashboardTemplate {
     pub stats: DashboardStats,
     pub time_range: String,
     pub next_speedtest: Option<NaiveDateTime>,
+    pub is_authenticated: bool,
 }
 
 pub struct DashboardStats {
@@ -75,6 +76,7 @@ fn get_next_scheduled_test() -> Option<NaiveDateTime> {
 pub async fn home_dashboard(
     State(state): State<AppState>,
     locale: Locale,
+    session: tower_sessions::Session,
     Query(params): Query<TimeRangeQuery>,
 ) -> Response {
     let hours_ago = match params.range.as_str() {
@@ -312,6 +314,7 @@ pub async fn home_dashboard(
     };
 
     let next_speedtest = get_next_scheduled_test();
+    let is_authenticated = crate::session::get_user_id(session).await.is_some();
 
     let template = HomeDashboardTemplate {
         locale: locale.0,
@@ -319,6 +322,7 @@ pub async fn home_dashboard(
         stats,
         time_range: params.range.clone(),
         next_speedtest,
+        is_authenticated,
     };
     
     match template.render() {

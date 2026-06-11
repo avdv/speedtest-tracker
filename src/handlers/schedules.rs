@@ -15,6 +15,7 @@ pub struct SchedulesTemplate {
     pub schedules: Vec<Schedule>,
     pub servers: Vec<crate::api::OoklaServer>,
     pub message: Option<String>,
+    pub is_authenticated: bool,
 }
 
 pub async fn schedules_page(
@@ -65,6 +66,7 @@ pub async fn schedules_page(
         schedules,
         servers: servers.into_iter().take(100).collect(),
         message,
+        is_authenticated: true,
     };
     
     match template.render() {

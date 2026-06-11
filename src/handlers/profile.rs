@@ -14,6 +14,7 @@ pub struct ProfileTemplate {
     pub locale: String,
     pub user: crate::models::User,
     pub message: Option<String>,
+    pub is_authenticated: bool,
 }
 
 pub async fn profile_page(
@@ -57,6 +58,7 @@ pub async fn profile_page(
                 locale: locale.0,
                 user,
                 message: None,
+                is_authenticated: true,
             };
             match template.render() {
                 Ok(html) => Html(html).into_response(),

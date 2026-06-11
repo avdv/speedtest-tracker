@@ -774,6 +774,13 @@ general.logout:
   fr_FR: "Se déconnecter"
   nl_NL: "Uitloggen"
   pt_BR: "Sair"
+general.login:
+  de_DE: "Anmelden"
+  en: "Login"
+  es_ES: "Iniciar sesión"
+  fr_FR: "Se connecter"
+  nl_NL: "Inloggen"
+  pt_BR: "Entrar"
 general.schedules:
   de_DE: "Zeitpläne"
   en: "Schedules"

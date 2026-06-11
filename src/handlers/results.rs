@@ -17,6 +17,7 @@ pub struct ResultsListTemplate {
     per_page: i64,
     total_results: i64,
     total_pages: i64,
+    is_authenticated: bool,
 }
 
 #[derive(Deserialize)]
@@ -112,6 +113,7 @@ pub async fn results_list(
         per_page: params.per_page,
         total_results,
         total_pages,
+        is_authenticated: true,
     };
     
     match template.render() {

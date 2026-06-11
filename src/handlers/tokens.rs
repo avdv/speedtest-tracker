@@ -17,6 +17,7 @@ pub struct ApiTokensTemplate {
     pub message: Option<String>,
     pub new_token: Option<String>,
     pub new_token_name: Option<String>,
+    pub is_authenticated: bool,
 }
 
 pub async fn api_tokens_page(
@@ -65,6 +66,7 @@ pub async fn api_tokens_page(
         message,
         new_token,
         new_token_name,
+        is_authenticated: true,
     };
     
     match template.render() {
@@ -243,6 +245,7 @@ pub struct EditTokenTemplate {
     locale: String,
     token: PersonalAccessToken,
     error: Option<String>,
+    is_authenticated: bool,
 }
 
 pub async fn edit_token_page(
@@ -282,7 +285,7 @@ pub async fn edit_token_page(
 
     match token {
         Ok(Some(token)) => {
-            let template = EditTokenTemplate { locale: locale.0, token, error: None };
+            let template = EditTokenTemplate { locale: locale.0, token, error: None, is_authenticated: true };
             match template.render() {
                 Ok(html) => Html(html).into_response(),
                 Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
