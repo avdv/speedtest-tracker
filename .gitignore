@@ -21,6 +21,7 @@ yarn-error.log
 /.nova
 /.phpunit.cache
 /.vscode
+/.direnv
 
 # AI and Boost assets
 /.agents
