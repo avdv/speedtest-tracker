@@ -12,7 +12,6 @@ use axum_extra::extract::CookieJar;
 pub struct Locale(pub String);
 
 /// Axum extractor for Locale
-#[axum::async_trait]
 impl<S> FromRequestParts<S> for Locale
 where
     S: Send + Sync,

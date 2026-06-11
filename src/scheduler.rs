@@ -1,6 +1,7 @@
 use crate::{db::Database, speedtest};
 use std::env;
 use tokio_cron_scheduler::{Job, JobScheduler};
+use rand::RngExt;
 
 pub struct SpeedtestScheduler {
     scheduler: JobScheduler,
@@ -58,8 +59,7 @@ impl SpeedtestScheduler {
 
                     if !ids.is_empty() {
                         // Pick a random server from the list
-                        use rand::Rng;
-                        let idx = rand::thread_rng().gen_range(0..ids.len());
+                        let idx = rand::rng().random_range(0..ids.len());
                         Some(ids[idx])
                     } else {
                         None

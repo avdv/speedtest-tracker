@@ -7,6 +7,7 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
 };
 use serde::Deserialize;
+use rand::RngExt;
 
 #[derive(Template)]
 #[template(path = "pages/api-tokens.html")]
@@ -73,7 +74,7 @@ pub async fn api_tokens_page(
 }
 
 pub async fn create_token(State(state): State<AppState>, body: String) -> Response {
-    use rand::Rng;
+    
     use sha2::{Digest, Sha256};
 
     // Parse form manually to handle duplicate keys
@@ -97,8 +98,8 @@ pub async fn create_token(State(state): State<AppState>, body: String) -> Respon
     }
 
     // Generate random token (plaintext) - 40 characters like Laravel Sanctum
-    let token: String = rand::thread_rng()
-        .sample_iter(&rand::distributions::Alphanumeric)
+    let token: String = rand::rng()
+        .sample_iter(&rand::distr::Alphanumeric)
         .take(40)
         .map(char::from)
         .collect();
