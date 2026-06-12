@@ -1,5 +1,5 @@
 // Import all modules from the library
-use speedtest_admin::{AppState, db, locale_middleware, scheduler};
+use speedtest_tracker::{AppState, db, locale_middleware, scheduler};
 
 rust_i18n::i18n!("locales", fallback = "en");
 
@@ -90,7 +90,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "speedtest_admin=debug,tower_http=debug".into()),
+                .unwrap_or_else(|_| "speedtest_tracker=debug,tower_http=debug".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -135,7 +135,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_expiry(Expiry::OnInactivity(time::Duration::hours(24)));
 
     // Create the application router using the centralized configuration from lib.rs
-    let app = speedtest_admin::create_app(state)
+    let app = speedtest_tracker::create_app(state)
         .layer(middleware::from_fn(locale_middleware::locale_middleware))
         .layer(session_layer);
 

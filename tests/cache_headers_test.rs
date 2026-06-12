@@ -1,5 +1,5 @@
 use axum::http::StatusCode;
-use speedtest_admin::embedded_assets;
+use speedtest_tracker::embedded_assets;
 
 #[tokio::test]
 async fn test_css_cache_headers() {

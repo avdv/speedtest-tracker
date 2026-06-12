@@ -23,7 +23,7 @@ echo "Building release binary..."
 SUPPRESS_BOLTDB_WARNING=1 cross build --release --target armv7-unknown-linux-musleabihf
 
 # Show binary info
-BINARY="target/armv7-unknown-linux-musleabihf/release/speedtest-admin"
+BINARY="target/armv7-unknown-linux-musleabihf/release/speedtest-tracker"
 echo ""
 echo "✅ Build complete!"
 echo "Binary location: $BINARY"
@@ -32,4 +32,4 @@ echo ""
 echo "To deploy:"
 echo "1. Copy binary to your armv7 device"
 echo "2. Set DATABASE_URL environment variable"
-echo "3. Run: ./speedtest-admin"
+echo "3. Run: ./speedtest-tracker"

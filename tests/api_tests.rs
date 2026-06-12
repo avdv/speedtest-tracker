@@ -2,7 +2,7 @@ use axum_test::TestServer;
 use axum_test::http::{HeaderName, HeaderValue};
 use serde_json::Value;
 use sha2::Digest;
-use speedtest_admin::{AppState, Database, create_app};
+use speedtest_tracker::{AppState, Database, create_app};
 use std::env;
 
 /// Helper function to create a test database and app state

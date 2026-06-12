@@ -1,4 +1,4 @@
-use speedtest_admin::filters::translate_status;
+use speedtest_tracker::filters::translate_status;
 
 #[test]
 fn test_translate_status_completed_en() {

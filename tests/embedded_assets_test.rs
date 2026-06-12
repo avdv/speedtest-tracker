@@ -1,4 +1,4 @@
-use speedtest_admin::embedded_assets::{CssAssets, FaviconAsset};
+use speedtest_tracker::embedded_assets::{CssAssets, FaviconAsset};
 
 #[test]
 fn test_css_assets_embedded() {

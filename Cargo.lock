@@ -2996,7 +2996,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "speedtest-admin"
+name = "speedtest-tracker"
 version = "0.1.0"
 dependencies = [
  "askama",
