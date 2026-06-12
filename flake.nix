@@ -14,79 +14,159 @@
         pkgs = nixpkgs.legacyPackages.${system};
         fx = fenix.packages.${system};
 
+        lib = pkgs.lib;
         rustDefault = fx.stable.toolchain;
 
-        rustCross = fx.combine [
-          fx.stable.rustc
-          fx.stable.cargo
-          fx.stable.clippy
-          fx.targets.armv7-unknown-linux-musleabihf.stable.rust-std
+        hostTriple = pkgs.stdenv.hostPlatform.config;
+
+        # Collect fenix targets (keys) as a list
+        fenixTargets = builtins.attrNames fx.targets;
+
+        supportedTargets = builtins.filter (t: lib.elem t fenixTargets) [
+          # Linux
+          "aarch64-unknown-linux-gnu"
+          "aarch64-unknown-linux-musl"
+          "arm-unknown-linux-gnueabi"
+          "arm-unknown-linux-gnueabihf"
+          "arm-unknown-linux-musleabi"
+          "arm-unknown-linux-musleabihf"
+          "armv7-unknown-linux-gnueabi"
+          "armv7-unknown-linux-gnueabihf"
+          "armv7-unknown-linux-musleabi"
+          "armv7-unknown-linux-musleabihf"
+          "x86_64-unknown-linux-gnu"
+          "x86_64-unknown-linux-musl"
+          # Mac
+          "aarch64-apple-darwin"
+          "x86_64-apple-darwin"
+          # Windows
+          "x86_64-pc-windows-gnu"
         ];
 
-        # Always inject -target arm-linux-musleabihf as the first argument and
-        # strip any -target / --target= passed by cargo (compiler or linker
-        # invocations) to avoid conflicts. This is necessary because when zig cc
-        # is called as a pure linker it receives no -target flag from Rust and
-        # would default to the host, failing to locate its bundled musl.
-        translateTarget = ''
-          args=(-target arm-linux-musleabihf)
-          skip_next=false
-          for arg in "$@"; do
-            if $skip_next; then
-              skip_next=false
-            elif [ "$arg" = "-target" ]; then
-              skip_next=true
-            elif [[ "$arg" == --target=* ]]; then
-              : # drop it
-            else
-              args+=("$arg")
-            fi
-          done
-        '';
+        # Convert fenix rust target triple -> zig target triple
+        toZigTarget = triple:
+          let
+            parts = builtins.split "-" triple;
+            arch = builtins.elemAt parts 0;
+            os = builtins.elemAt parts 4;
+            abi = if (builtins.length parts) > 6 then builtins.elemAt parts 6 else "";
+            archFixed = if arch == "armv7" then "arm" else arch;
+            # rebuild: arch-os(-abi) where abi may already contain musleabihf etc.
+            base = if abi != "" then "${archFixed}-${os}-${abi}" else "${archFixed}-${os}";
+          in
+          base;
 
-        zigCC = pkgs.writeShellScriptBin "zig-cc-armv7" ''
-          ${translateTarget}
-          exec ${pkgs.zig}/bin/zig cc "''${args[@]}"
-        '';
+        # Helper to make zig wrapper scripts that inject -target when needed
+        makeZigWrappers = target: pkgs.runCommand "zig-wrappers-${target}" { }
+          ''
+            mkdir -p $out/bin
+            cat > $out/bin/zig-target <<'EOF'
+            #!${pkgs.stdenv.shell}
+            args=(-target ${toZigTarget target})
+            skip_next=false
+            for arg in "$@"; do
+              if $skip_next; then
+                skip_next=false
+              elif [ "$arg" = "-target" ]; then
+                skip_next=true
+              elif [ "''${arg#--target=}" != "$arg" ]; then
+                : # drop --target=*
+              else
+                args+=("$arg")
+              fi
+            done
+            exec ${pkgs.zig}/bin/zig "$CMD" "''${args[@]}"
+            EOF
 
-        zigCXX = pkgs.writeShellScriptBin "zig-cxx-armv7" ''
-          ${translateTarget}
-          exec ${pkgs.zig}/bin/zig c++ "''${args[@]}"
-        '';
+            cat > $out/bin/zig-cc <<EOF
+            #!${pkgs.stdenv.shell}
+            CMD=cc source $out/bin/zig-target
+            EOF
+            chmod +x $out/bin/zig-cc
 
-        zigAR = pkgs.writeShellScriptBin "zig-ar-armv7" ''
-          exec ${pkgs.zig}/bin/zig ar "$@"
-        '';
-      in
-      {
-        devShells.default = pkgs.mkShell {
+            cat > $out/bin/zig-cxx <<EOF
+            #!${pkgs.stdenv.shell}
+            CMD=c++ source $out/bin/zig-target
+            EOF
+
+            cat > $out/bin/zig-ar <<'EOF'
+            #!${pkgs.stdenv.shell}
+            exec ${pkgs.zig}/bin/zig ar "$@"
+            EOF
+            chmod +x $out/bin/zig-ar
+          '';
+
+        # Build cross shells for every fenix target except hostTripleFixed
+        crossShells = builtins.map
+          (target:
+            let
+              # try to find matching rust std in fx.targets.<target>.stable.rust-std or fx.stable.targets.<target>.rust-std
+              targetAttrs = builtins.getAttr target fx.targets;
+              rustStd =
+                if targetAttrs != null && targetAttrs.stable != null && targetAttrs.stable.rust-std != null then
+                  targetAttrs.stable.rust-std
+                else
+                # safe lookup: fx.targets may directly hold rust-std attr
+                  builtins.getAttrOr null ("rust-std") targetAttrs;
+              # combine rustc/cargo/clippy plus rust std if available
+              rustPkgs =
+                if rustStd != null then fx.combine [ fx.stable.rustc fx.stable.cargo fx.stable.clippy rustStd ]
+                else fx.combine [ fx.stable.rustc fx.stable.cargo fx.stable.clippy ];
+              zigWrappers = makeZigWrappers target;
+            in
+            {
+              "cross-${target}" = pkgs.mkShellNoCC {
+                name = "cross-${target}";
+                packages = [
+                  rustPkgs
+                  pkgs.tailwindcss_4
+                  pkgs.zig
+                ];
+
+                env =
+                  let
+                    # sanitize env var name from target triple for cargo variable
+                    cargoVar = "CARGO_TARGET_${builtins.replaceStrings [ "-" ] [ "_" ] (lib.toUpper target)}_LINKER";
+                    ccVar = "CC_${builtins.replaceStrings [ "-" ] [ "_" ] target}";
+                    cxxVar = "CXX_${builtins.replaceStrings [ "-" ] [ "_" ] target}";
+                    arVar = "AR_${builtins.replaceStrings [ "-" ] [ "_" ] target}";
+                    rustflagsVar = "CARGO_TARGET_${builtins.replaceStrings [ "-" ] [ "_" ] (lib.toUpper target)}_RUSTFLAGS";
+                  in
+                  {
+                    "CARGO_BUILD_TARGET" = target;
+                    # point to our wrappers
+                    "${cargoVar}" = "${zigWrappers}/bin/zig-cc";
+                    "${ccVar}" = "${zigWrappers}/bin/zig-cc";
+                    "${cxxVar}" = "${zigWrappers}/bin/zig-cxx";
+                    "${arVar}" = "${zigWrappers}/bin/zig-ar";
+                    # prevent rust from linking its own crt if using musl-like targets
+                    "${rustflagsVar}" = "-C link-self-contained=no";
+                  };
+
+                shellHook = ''
+                  echo "Cross-compilation shell for target: ${target} (via zig cc)"
+                '';
+              };
+            })
+          (builtins.filter (t: t != hostTriple && (builtins.length (lib.strings.split "-" t) > 4)) supportedTargets);
+
+        defaultShell = pkgs.mkShell {
           packages = [
             rustDefault
             pkgs.tailwindcss_4
           ];
         };
 
-        devShells.cross-armv7 = pkgs.mkShellNoCC {
-          packages = [
-            rustCross
-            pkgs.tailwindcss_4
-            pkgs.zig
-          ];
+      in
+      {
+        # expose all cross shells as attributes under devShells
+        devShells = builtins.foldl' (acc: x: acc // x)
+          {
+            default = defaultShell;
+          }
+          crossShells;
 
-          env = {
-            CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_LINKER = "${zigCC}/bin/zig-cc-armv7";
-            CC_armv7_unknown_linux_musleabihf = "${zigCC}/bin/zig-cc-armv7";
-            CXX_armv7_unknown_linux_musleabihf = "${zigCXX}/bin/zig-cxx-armv7";
-            AR_armv7_unknown_linux_musleabihf = "${zigAR}/bin/zig-ar-armv7";
-            # Prevent Rust from injecting its own self-contained crt1.o / crti.o;
-            # zig already provides musl startup files from its bundled libc.
-            CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUSTFLAGS = "-C link-self-contained=no";
-          };
-
-          shellHook = ''
-            echo "Cross-compilation shell for armv7-unknown-linux-musleabihf (via zig cc)"
-          '';
-        };
       }
     );
 }
+
