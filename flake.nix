@@ -60,14 +60,16 @@
       in
       {
         devShells.default = pkgs.mkShell {
-          buildInputs = [
+          packages = [
             rustDefault
+            pkgs.tailwindcss_4
           ];
         };
 
         devShells.cross-armv7 = pkgs.mkShellNoCC {
           packages = [
             rustCross
+            pkgs.tailwindcss_4
             pkgs.zig
           ];
 

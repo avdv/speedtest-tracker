@@ -59,21 +59,18 @@ fn build_tailwind_css_if_needed() {
     }
 
     // Check if tailwindcss is available
-    let tailwind_check = Command::new("npx")
-        .args(&["tailwindcss", "--help"])
-        .output();
+    let tailwind_check = Command::new("tailwindcss").args(&["--help"]).output();
 
     if tailwind_check.is_err() {
         eprintln!("Warning: tailwindcss not found, skipping CSS build");
-        eprintln!("Run 'npm install' to install dependencies");
         return;
     }
 
     println!("cargo:warning=Building Tailwind CSS...");
 
     // Run tailwindcss build
-    let status = Command::new("npx")
-        .args(&["tailwindcss", "-i", input, "-o", output, "--minify"])
+    let status = Command::new("tailwindcss")
+        .args(&["-i", input, "-o", output, "--minify"])
         .status();
 
     match status {
