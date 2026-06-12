@@ -34,6 +34,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 bcrypt = "0.19"
 uuid = { version = "1.23", features = ["v4", "serde"] }
+clap = { version = "4", features = ["derive", "env"] }
 dotenvy = "0.15"
 rand = "0.10"
 sha2 = "0.11"

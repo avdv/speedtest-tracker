@@ -4,6 +4,7 @@ use speedtest_admin::{AppState, db, locale_middleware, scheduler};
 rust_i18n::i18n!("locales", fallback = "en");
 
 use axum::middleware;
+use clap::Parser;
 use tower_sessions::{Expiry, SessionManagerLayer};
 #[cfg(feature = "mysql")]
 use tower_sessions_sqlx_store::MySqlStore;
@@ -12,6 +13,17 @@ use tower_sessions_sqlx_store::PostgresStore;
 #[cfg(feature = "sqlite")]
 use tower_sessions_sqlx_store::SqliteStore;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+#[derive(Parser)]
+#[command(
+    version,
+    about = "Speedtest Tracker — self-hosted internet performance monitoring"
+)]
+struct Cli {
+    /// Port to listen on
+    #[arg(short, long, env = "PORT", default_value = "3000")]
+    port: u16,
+}
 
 // Wrapper enum for different session store types
 #[derive(Clone, Debug)]
@@ -73,6 +85,8 @@ impl tower_sessions::SessionStore for AnySessionStore {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
 
+    let cli = Cli::parse();
+
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -125,8 +139,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .layer(middleware::from_fn(locale_middleware::locale_middleware))
         .layer(session_layer);
 
-    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
-    let addr = format!("0.0.0.0:{}", port);
+    let addr = format!("0.0.0.0:{}", cli.port);
 
     tracing::info!("Starting server on {}", addr);
 
