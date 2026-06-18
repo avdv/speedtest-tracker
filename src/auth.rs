@@ -1,22 +1,40 @@
 use axum::{
-    Json,
-    extract::{Request, State},
-    http::StatusCode,
+    extract::{FromRequestParts, Request, State},
+    http::{request::Parts, StatusCode},
     middleware::Next,
     response::Response,
+    Json,
 };
 use axum_extra::{
+    headers::{authorization::Bearer, Authorization},
     TypedHeader,
-    headers::{Authorization, authorization::Bearer},
 };
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
-use crate::{AppState, db::Database, models::PersonalAccessToken};
+use crate::{db::Database, models::PersonalAccessToken, AppState};
 
 #[derive(Serialize)]
 pub struct ErrorResponse {
     pub message: String,
+}
+
+impl<S> FromRequestParts<S> for PersonalAccessToken
+where
+    S: Send + Sync,
+{
+    type Rejection = (StatusCode, &'static str);
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        parts
+            .extensions
+            .get::<PersonalAccessToken>()
+            .cloned()
+            .ok_or((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "No access token found in request extensions",
+            ))
+    }
 }
 
 pub async fn require_auth(

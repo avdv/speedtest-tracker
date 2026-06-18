@@ -69,6 +69,15 @@ pub struct PersonalAccessToken {
     pub updated_at: NaiveDateTime,
 }
 
+impl PersonalAccessToken {
+    pub fn is_read(&self) -> bool {
+        if let Some(abilities) = &self.abilities {
+            return abilities.contains("read");
+        }
+        false
+    }
+}
+
 impl Result {
     pub fn download_mbps(&self) -> f64 {
         // Database stores bandwidth in bytes/second, multiply by 8 to get bits/second, then divide by 1M for Mbps
