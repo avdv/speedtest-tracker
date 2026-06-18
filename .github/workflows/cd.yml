@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Generate GitHub App token
         id: generate_token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -19,7 +19,7 @@ jobs:
           repositories: docker-speedtest-tracker
 
       - name: Trigger docker-speedtest-tracker build
-        uses: peter-evans/repository-dispatch@v4
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
         with:
           token: ${{ steps.generate_token.outputs.token }}
           repository: alexjustesen/docker-speedtest-tracker
