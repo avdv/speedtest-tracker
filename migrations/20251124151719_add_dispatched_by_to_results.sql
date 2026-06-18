@@ -1,0 +1,4 @@
+
+ALTER TABLE results ADD COLUMN dispatched_by TEXT
+CONSTRAINT users REFERENCES users (id) ON DELETE SET NULL;
+  

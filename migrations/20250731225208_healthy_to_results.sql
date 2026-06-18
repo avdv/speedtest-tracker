@@ -1,0 +1,1 @@
+ALTER TABLE results ADD COLUMN healthy INTEGER;
