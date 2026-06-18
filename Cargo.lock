@@ -180,6 +180,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "assert_float_eq"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd9777fd8234cccd34019d9e26d70c8247f9baf24c8fdc0b56c548cf943af2ed"
+
+[[package]]
 name = "async-trait"
 version = "0.1.89"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3000,6 +3006,7 @@ name = "speedtest-tracker"
 version = "0.1.0"
 dependencies = [
  "askama",
+ "assert_float_eq",
  "async-trait",
  "axum",
  "axum-extra",

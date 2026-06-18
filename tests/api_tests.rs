@@ -1,8 +1,9 @@
-use axum_test::TestServer;
+use assert_float_eq::assert_float_absolute_eq;
 use axum_test::http::{HeaderName, HeaderValue};
+use axum_test::TestServer;
 use serde_json::Value;
 use sha2::Digest;
-use speedtest_tracker::{AppState, Database, create_app};
+use speedtest_tracker::{create_app, AppState, Database};
 use std::env;
 
 /// Helper function to create a test database and app state
@@ -54,7 +55,7 @@ async fn setup_test_state(test_name: &str) -> AppState {
 async fn create_test_result(state: &AppState) -> i64 {
     let query = r#"
         INSERT INTO results (service, ping, download, upload, status, scheduled, created_at, updated_at)
-        VALUES ('ookla', 12.5, 123456789, 12345678, 'completed', 1, datetime('now'), datetime('now'))
+        VALUES ('ookla', 12.5, 123456789, 6275000, 'completed', 1, datetime('now'), datetime('now'))
     "#;
 
     match &state.db {
@@ -147,7 +148,13 @@ mod api_endpoint_tests {
         assert!(json["data"].is_object());
         assert!(json["data"]["id"].is_number());
         assert_eq!(json["data"]["ping"], 12.5);
-        assert_eq!(json["data"]["download"], 100.5); // Converted to Mbps
+        assert_float_absolute_eq!(
+            json["data"]["download"]
+                .as_number()
+                .and_then(|f| f.as_f64())
+                .unwrap(),
+            987.654312
+        ); // Converted to Mbps
         assert_eq!(json["data"]["upload"], 50.2); // Converted to Mbps
     }
 
@@ -225,9 +232,10 @@ mod api_endpoint_tests {
         response.assert_status_ok();
 
         let json: Value = response.json();
-        assert!(json["id"].is_number());
-        assert_eq!(json["service"], "ookla");
-        assert_eq!(json["status"], "completed");
+        let data = json["data"].as_object().unwrap();
+        assert!(data["id"].is_number());
+        assert_eq!(data["service"], "ookla");
+        assert_eq!(data["status"], "completed");
     }
 
     #[tokio::test]
@@ -281,8 +289,9 @@ mod api_endpoint_tests {
         response.assert_status_ok();
 
         let json: Value = response.json();
-        assert_eq!(json["id"], result_id);
-        assert_eq!(json["service"], "ookla");
+        let data = json["data"].as_object().unwrap();
+        assert_eq!(data["id"], result_id);
+        assert_eq!(data["service"], "ookla");
     }
 
     #[tokio::test]
@@ -316,18 +325,19 @@ mod api_endpoint_tests {
         response.assert_status_ok();
 
         let json: Value = response.json();
-        assert!(json["download"].is_object());
-        assert!(json["upload"].is_object());
-        assert!(json["ping"].is_object());
+        let data = json["data"].as_object().unwrap();
+        assert!(data["download"].is_object());
+        assert!(data["upload"].is_object());
+        assert!(data["ping"].is_object());
 
         // Check structure
-        assert!(json["download"]["min"].is_object());
-        assert!(json["download"]["avg"].is_object());
-        assert!(json["download"]["max"].is_object());
+        assert!(data["download"]["min"].is_number());
+        assert!(data["download"]["avg"].is_number());
+        assert!(data["download"]["max"].is_number());
 
         // Check it has bits and human fields
-        assert!(json["download"]["avg"]["bits"].is_number());
-        assert!(json["download"]["avg"]["human"].is_string());
+        assert!(data["download"]["avg_bits"].is_number());
+        assert!(data["download"]["avg_bits_human"].is_string());
     }
 
     #[tokio::test]
@@ -416,6 +426,6 @@ mod api_endpoint_tests {
             .await;
 
         // Should be unauthorized because token doesn't have results:read ability
-        response.assert_status(axum::http::StatusCode::UNAUTHORIZED);
+        response.assert_status(axum::http::StatusCode::FORBIDDEN);
     }
 }
