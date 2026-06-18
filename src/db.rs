@@ -5,7 +5,6 @@ use sqlx::Pool;
 use sqlx::Postgres;
 #[cfg(feature = "sqlite")]
 use sqlx::Sqlite;
-use std::env;
 
 #[cfg(not(any(feature = "sqlite", feature = "mysql", feature = "postgres")))]
 compile_error!(
@@ -23,15 +22,7 @@ pub enum Database {
 }
 
 impl Database {
-    pub async fn connect() -> Result<Self, sqlx::Error> {
-        let database_url_env = env::var("DATABASE_URL");
-
-        #[cfg(feature = "sqlite")]
-        let database_url =
-            database_url_env.unwrap_or_else(|_| "sqlite:./database/database.sqlite".to_string());
-        #[cfg(not(feature = "sqlite"))]
-        let database_url = database_url_env.expect("DATABASE_URL must be configured")?;
-
+    pub async fn connect(database_url: &str) -> Result<Self, sqlx::Error> {
         #[cfg(feature = "sqlite")]
         if database_url.starts_with("sqlite") {
             let pool = sqlx::sqlite::SqlitePoolOptions::new()

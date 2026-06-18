@@ -6,13 +6,14 @@ use speedtest_tracker::{AppState, Database, create_app};
 use std::env;
 
 /// Helper function to create a test database and app state
-async fn setup_test_app() -> TestServer {
+async fn setup_test_app(test_name: &str) -> TestServer {
     // Set up test database URL (in-memory SQLite for tests)
-    env::set_var("DATABASE_URL", "sqlite::memory:");
+    let database_url: String = format!("sqlite:file:{test_name}?mode=memory&cache=shared");
+
     env::set_var("SESSION_SECRET", "test-secret-key-32-characters!!");
 
     // Create database connection
-    let db = Database::connect()
+    let db = Database::connect(&database_url)
         .await
         .expect("Failed to connect to test database");
 
@@ -25,16 +26,17 @@ async fn setup_test_app() -> TestServer {
     }
 
     let state = AppState { db };
-    let app = create_app(state).await;
+    let app = create_app(state);
 
-    TestServer::new(app).expect("Failed to create test server")
+    TestServer::new(app)
 }
 
 /// Helper to setup test state with database (for tests that need to pre-populate data)
-async fn setup_test_state() -> AppState {
-    env::set_var("DATABASE_URL", "sqlite::memory:");
+async fn setup_test_state(test_name: &str) -> AppState {
+    // Set up test database URL (in-memory SQLite for tests)
+    let database_url: String = format!("sqlite:file:{test_name}?mode=memory&cache=shared");
 
-    let db = Database::connect()
+    let db = Database::connect(&database_url)
         .await
         .expect("Failed to connect to test database");
 
@@ -78,7 +80,7 @@ async fn create_test_result(state: &AppState) -> i64 {
 /// Helper to create a test API token
 async fn create_test_token(state: &AppState, abilities: &str) -> String {
     let token = format!("test-token-{}", uuid::Uuid::new_v4());
-    let token_hash = format!("{:x}", sha2::Sha256::digest(token.as_bytes()));
+    let token_hash = hex::encode(sha2::Sha256::digest(token.as_bytes()));
 
     let query = r#"
         INSERT INTO personal_access_tokens (name, token, abilities, created_at, updated_at)
@@ -112,7 +114,7 @@ mod api_endpoint_tests {
 
     #[tokio::test]
     async fn test_healthcheck_returns_ok() {
-        let server = setup_test_app().await;
+        let server = setup_test_app("healthcheck").await;
 
         let response = server.get("/api/healthcheck").await;
 
@@ -124,7 +126,7 @@ mod api_endpoint_tests {
 
     #[tokio::test]
     async fn test_legacy_latest_endpoint_returns_404_when_no_results() {
-        let server = setup_test_app().await;
+        let server = setup_test_app("legacy_noresults").await;
 
         let response = server.get("/api/speedtest/latest").await;
 
@@ -134,12 +136,12 @@ mod api_endpoint_tests {
     #[tokio::test]
     async fn test_legacy_latest_endpoint_returns_result() {
         // Create a test result
-        let state = setup_test_state().await;
+        let state = setup_test_state("legacy_results").await;
         create_test_result(&state).await;
 
         // Recreate server with populated database
-        let app = create_app(state).await;
-        let server = TestServer::new(app).expect("Failed to create test server");
+        let app = create_app(state);
+        let server = TestServer::new(app);
 
         let response = server.get("/api/speedtest/latest").await;
 
@@ -160,7 +162,7 @@ mod api_endpoint_tests {
 
     #[tokio::test]
     async fn test_v1_results_requires_authentication() {
-        let server = setup_test_app().await;
+        let server = setup_test_app("results_auth").await;
 
         let response = server.get("/api/v1/results").await;
 
@@ -169,16 +171,26 @@ mod api_endpoint_tests {
     }
 
     #[tokio::test]
+    async fn test_v1_results_latest_requires_auth() {
+        let server = setup_test_app("results_latest_auth").await;
+
+        let response = server.get("/api/v1/results/latest").await;
+
+        // TypedHeader extraction returns 400 (Bad Request) when header is missing
+        response.assert_status(axum::http::StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
     async fn test_v1_results_with_valid_token() {
         // Create state with token
-        let state = setup_test_state().await;
+        let state = setup_test_state("results_valid").await;
 
         let token = create_test_token(&state, "results:read").await;
         create_test_result(&state).await;
 
         // Recreate server
-        let app = create_app(state).await;
-        let server = TestServer::new(app).expect("Failed to create test server");
+        let app = create_app(state);
+        let server = TestServer::new(app);
 
         let response = server
             .get("/api/v1/results")
@@ -197,25 +209,15 @@ mod api_endpoint_tests {
     }
 
     #[tokio::test]
-    async fn test_v1_results_latest_requires_auth() {
-        let server = setup_test_app().await;
-
-        let response = server.get("/api/v1/results/latest").await;
-
-        // TypedHeader extraction returns 400 (Bad Request) when header is missing
-        response.assert_status(axum::http::StatusCode::BAD_REQUEST);
-    }
-
-    #[tokio::test]
     async fn test_v1_results_latest_with_token() {
         // Setup
-        let state = setup_test_state().await;
+        let state = setup_test_state("results_latest_token").await;
 
         let token = create_test_token(&state, "results:read").await;
         create_test_result(&state).await;
 
-        let app = create_app(state).await;
-        let server = TestServer::new(app).expect("Failed to create test server");
+        let app = create_app(state);
+        let server = TestServer::new(app);
 
         let response = server
             .get("/api/v1/results/latest")
@@ -235,7 +237,7 @@ mod api_endpoint_tests {
 
     #[tokio::test]
     async fn test_v1_results_by_id_requires_auth() {
-        let server = setup_test_app().await;
+        let server = setup_test_app("results_id_auth").await;
 
         let response = server.get("/api/v1/results/1").await;
 
@@ -245,12 +247,12 @@ mod api_endpoint_tests {
 
     #[tokio::test]
     async fn test_v1_results_by_id_returns_404_for_nonexistent() {
-        let state = setup_test_state().await;
+        let state = setup_test_state("results_404").await;
 
         let token = create_test_token(&state, "results:read").await;
 
-        let app = create_app(state).await;
-        let server = TestServer::new(app).expect("Failed to create test server");
+        let app = create_app(state);
+        let server = TestServer::new(app);
 
         let response = server
             .get("/api/v1/results/99999")
@@ -265,13 +267,13 @@ mod api_endpoint_tests {
 
     #[tokio::test]
     async fn test_v1_results_by_id_with_valid_id() {
-        let state = setup_test_state().await;
+        let state = setup_test_state("results_one").await;
 
         let token = create_test_token(&state, "results:read").await;
         let result_id = create_test_result(&state).await;
 
-        let app = create_app(state).await;
-        let server = TestServer::new(app).expect("Failed to create test server");
+        let app = create_app(state);
+        let server = TestServer::new(app);
 
         let response = server
             .get(&format!("/api/v1/results/{}", result_id))
@@ -290,7 +292,7 @@ mod api_endpoint_tests {
 
     #[tokio::test]
     async fn test_v1_stats_requires_auth() {
-        let server = setup_test_app().await;
+        let server = setup_test_app("results_stats_auth").await;
 
         let response = server.get("/api/v1/stats").await;
 
@@ -300,13 +302,13 @@ mod api_endpoint_tests {
 
     #[tokio::test]
     async fn test_v1_stats_returns_aggregated_data() {
-        let state = setup_test_state().await;
+        let state = setup_test_state("results_stats").await;
 
         let token = create_test_token(&state, "results:read").await;
         create_test_result(&state).await;
 
-        let app = create_app(state).await;
-        let server = TestServer::new(app).expect("Failed to create test server");
+        let app = create_app(state);
+        let server = TestServer::new(app);
 
         let response = server
             .get("/api/v1/stats")
@@ -335,7 +337,7 @@ mod api_endpoint_tests {
 
     #[tokio::test]
     async fn test_v1_results_pagination() {
-        let state = setup_test_state().await;
+        let state = setup_test_state("results_page").await;
 
         let token = create_test_token(&state, "results:read").await;
 
@@ -344,8 +346,8 @@ mod api_endpoint_tests {
             create_test_result(&state).await;
         }
 
-        let app = create_app(state).await;
-        let server = TestServer::new(app).expect("Failed to create test server");
+        let app = create_app(state);
+        let server = TestServer::new(app);
 
         // Test pagination parameters
         let response = server
@@ -366,7 +368,7 @@ mod api_endpoint_tests {
 
     #[tokio::test]
     async fn test_invalid_bearer_token_returns_401() {
-        let server = setup_test_app().await;
+        let server = setup_test_app("invalid_bearer").await;
 
         let response = server
             .get("/api/v1/results")
@@ -381,12 +383,12 @@ mod api_endpoint_tests {
 
     #[tokio::test]
     async fn test_case_insensitive_bearer_token() {
-        let state = setup_test_state().await;
+        let state = setup_test_state("results_bearer").await;
 
         let token = create_test_token(&state, "results:read").await;
 
-        let app = create_app(state).await;
-        let server = TestServer::new(app).expect("Failed to create test server");
+        let app = create_app(state);
+        let server = TestServer::new(app);
 
         // Test with lowercase "bearer"
         let response = server
@@ -402,13 +404,13 @@ mod api_endpoint_tests {
 
     #[tokio::test]
     async fn test_token_without_required_ability_is_denied() {
-        let state = setup_test_state().await;
+        let state = setup_test_state("results").await;
 
         // Create token without results:read ability
         let token = create_test_token(&state, "speedtests:run").await;
 
-        let app = create_app(state).await;
-        let server = TestServer::new(app).expect("Failed to create test server");
+        let app = create_app(state);
+        let server = TestServer::new(app);
 
         let response = server
             .get("/api/v1/results")

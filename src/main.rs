@@ -23,6 +23,8 @@ struct Cli {
     /// Port to listen on
     #[arg(short, long, env = "PORT", default_value = "3000")]
     port: u16,
+    #[arg(short, long, env = "DATABASE_URL")]
+    database_url: Option<String>,
 }
 
 // Wrapper enum for different session store types
@@ -95,7 +97,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let db = db::Database::connect().await?;
+    #[cfg(feature = "sqlite")]
+    let database_url = cli
+        .database_url
+        .unwrap_or("sqlite:./database/database.sqlite".to_string());
+    #[cfg(not(feature = "sqlite"))]
+    let database_url = cli.database_url.expect("DATABASE_URL must be configured")?;
+
+    let db = db::Database::connect(&database_url).await?;
 
     // Run migrations
     tracing::info!("Running database migrations...");
