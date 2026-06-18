@@ -60,17 +60,12 @@ async fn create_test_result(state: &AppState) -> i64 {
     match &state.db {
         #[cfg(feature = "sqlite")]
         Database::Sqlite(pool) => {
-            sqlx::query(query)
+            let effected = sqlx::query(query)
                 .execute(pool)
                 .await
                 .expect("Failed to insert test result");
 
-            let row: (i64,) = sqlx::query_as("SELECT last_insert_rowid()")
-                .fetch_one(pool)
-                .await
-                .expect("Failed to get last insert id");
-
-            row.0
+            effected.last_insert_rowid()
         }
         #[cfg(any(feature = "postgres", feature = "mysql"))]
         _ => panic!("Only SQLite is supported for tests"),
