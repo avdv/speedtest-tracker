@@ -25,6 +25,9 @@ jobs:
       - name: "Run clippy"
         run: nix develop -c cargo clippy
 
+      - name: "Check formatting"
+        run: nix develop -c cargo fmt --check
+
   test:
     needs: lint
     runs-on: ubuntu-24.04
