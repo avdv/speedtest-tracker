@@ -6,7 +6,7 @@ use axum::{
     response::{Html, IntoResponse, Response},
 };
 use serde::Deserialize;
-use chrono::{Local, NaiveDateTime};
+use chrono::{Utc, NaiveDateTime};
 use std::env;
 use std::str::FromStr;
 
@@ -70,7 +70,7 @@ fn get_next_scheduled_test() -> Option<NaiveDateTime> {
     };
 
     // Get the next run time and convert to NaiveDateTime
-    schedule.upcoming(Local).take(1).next().map(|next| next.naive_local())
+    schedule.upcoming(Utc).take(1).next().map(|next| next.naive_utc())
 }
 
 pub async fn home_dashboard(
