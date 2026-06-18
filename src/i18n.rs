@@ -4,7 +4,7 @@
 pub fn normalize_locale(lang: &str) -> String {
     // Replace underscores with hyphens and lowercase
     let normalized = lang.replace('_', "-").to_lowercase();
-    
+
     match normalized.as_str() {
         "en" | "en-us" | "en-gb" | "en-ca" | "en-au" => "en".to_string(),
         "de" | "de-de" | "de-at" | "de-ch" => "de_DE".to_string(),
@@ -23,7 +23,10 @@ pub fn normalize_locale(lang: &str) -> String {
 
 /// Check if a locale is supported
 pub fn is_valid_locale(locale: &str) -> bool {
-    matches!(locale, "en" | "de_DE" | "es_ES" | "fr_FR" | "nl_NL" | "pt_BR")
+    matches!(
+        locale,
+        "en" | "de_DE" | "es_ES" | "fr_FR" | "nl_NL" | "pt_BR"
+    )
 }
 
 /// Get list of all available locales with their display names

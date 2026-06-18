@@ -1,10 +1,10 @@
-use crate::{filters, AppState, db::Database};
 use crate::locale_middleware::Locale;
+use crate::{db::Database, filters, AppState};
 use askama::Template;
 use axum::{
-    Form,
     extract::State,
     response::{Html, IntoResponse, Redirect, Response},
+    Form,
 };
 use serde::Deserialize;
 
@@ -62,9 +62,13 @@ pub async fn profile_page(
             };
             match template.render() {
                 Ok(html) => Html(html).into_response(),
-                Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+                Err(err) => (
+                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                    err.to_string(),
+                )
+                    .into_response(),
             }
-        },
+        }
         _ => Redirect::to("/login").into_response(),
     }
 }

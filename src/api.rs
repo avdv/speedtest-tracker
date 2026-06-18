@@ -1,4 +1,4 @@
-use crate::{AppState, db::Database, models::Result as SpeedTestResult};
+use crate::{db::Database, models::Result as SpeedTestResult, AppState};
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -149,8 +149,7 @@ pub async fn legacy_latest(State(state): State<AppState>) -> impl IntoResponse {
             )
             .fetch_optional(pool)
             .await
-            .ok()
-            .flatten()
+            .expect("fetched one result")
         },
         #[cfg(feature = "mysql")]
 
@@ -160,8 +159,7 @@ pub async fn legacy_latest(State(state): State<AppState>) -> impl IntoResponse {
             )
             .fetch_optional(pool)
             .await
-            .ok()
-            .flatten()
+            .expect("fetched one result")
         },
         #[cfg(feature = "postgres")]
 
@@ -171,8 +169,7 @@ pub async fn legacy_latest(State(state): State<AppState>) -> impl IntoResponse {
             )
             .fetch_optional(pool)
             .await
-            .ok()
-            .flatten()
+            .expect("fetched one result")
         },
     };
 
@@ -308,24 +305,21 @@ pub async fn latest_result(State(state): State<AppState>) -> impl IntoResponse {
         )
         .fetch_optional(pool)
         .await
-        .ok()
-        .flatten(),
+        .expect("fetch latest result"),
         #[cfg(feature = "mysql")]
         Database::MySql(pool) => sqlx::query_as::<_, SpeedTestResult>(
             "SELECT * FROM results ORDER BY created_at DESC LIMIT 1",
         )
         .fetch_optional(pool)
         .await
-        .ok()
-        .flatten(),
+        .expect("fetch latest result"),
         #[cfg(feature = "postgres")]
         Database::Postgres(pool) => sqlx::query_as::<_, SpeedTestResult>(
             "SELECT * FROM results ORDER BY created_at DESC LIMIT 1",
         )
         .fetch_optional(pool)
         .await
-        .ok()
-        .flatten(),
+        .expect("fetch latest result"),
     };
 
     match result {
@@ -355,8 +349,7 @@ pub async fn get_result(State(state): State<AppState>, Path(id): Path<i64>) -> i
                 .bind(id)
                 .fetch_optional(pool)
                 .await
-                .ok()
-                .flatten()
+                .expect("fetch a result")
         }
         #[cfg(feature = "mysql")]
         Database::MySql(pool) => {
@@ -364,8 +357,7 @@ pub async fn get_result(State(state): State<AppState>, Path(id): Path<i64>) -> i
                 .bind(id)
                 .fetch_optional(pool)
                 .await
-                .ok()
-                .flatten()
+                .expect("fetch a result")
         }
         #[cfg(feature = "postgres")]
         Database::Postgres(pool) => {
@@ -373,8 +365,7 @@ pub async fn get_result(State(state): State<AppState>, Path(id): Path<i64>) -> i
                 .bind(id)
                 .fetch_optional(pool)
                 .await
-                .ok()
-                .flatten()
+                .expect("fetch a result")
         }
     };
 

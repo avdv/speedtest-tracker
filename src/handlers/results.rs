@@ -1,10 +1,10 @@
-use crate::{filters, AppState, db::Database, models::Result as SpeedTestResult};
 use crate::locale_middleware::Locale;
+use crate::{db::Database, filters, models::Result as SpeedTestResult, AppState};
 use askama::Template;
 use axum::{
-    Form,
     extract::{Query, State},
     response::{Html, IntoResponse, Redirect, Response},
+    Form,
 };
 use serde::Deserialize;
 
@@ -115,10 +115,14 @@ pub async fn results_list(
         total_pages,
         is_authenticated: true,
     };
-    
+
     match template.render() {
         Ok(html) => Html(html).into_response(),
-        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+        Err(err) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            err.to_string(),
+        )
+            .into_response(),
     }
 }
 

@@ -1,13 +1,13 @@
-use crate::{filters, AppState, db::Database, models::PersonalAccessToken};
 use crate::locale_middleware::Locale;
+use crate::{db::Database, filters, models::PersonalAccessToken, AppState};
 use askama::Template;
 use axum::{
-    Form,
     extract::{Query, State},
     response::{Html, IntoResponse, Redirect, Response},
+    Form,
 };
-use serde::Deserialize;
 use rand::RngExt;
+use serde::Deserialize;
 
 #[derive(Template)]
 #[template(path = "pages/api-tokens.html")]
@@ -68,15 +68,18 @@ pub async fn api_tokens_page(
         new_token_name,
         is_authenticated: true,
     };
-    
+
     match template.render() {
         Ok(html) => Html(html).into_response(),
-        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+        Err(err) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            err.to_string(),
+        )
+            .into_response(),
     }
 }
 
 pub async fn create_token(State(state): State<AppState>, body: String) -> Response {
-    
     use sha2::{Digest, Sha256};
 
     // Parse form manually to handle duplicate keys
@@ -285,12 +288,21 @@ pub async fn edit_token_page(
 
     match token {
         Ok(Some(token)) => {
-            let template = EditTokenTemplate { locale: locale.0, token, error: None, is_authenticated: true };
+            let template = EditTokenTemplate {
+                locale: locale.0,
+                token,
+                error: None,
+                is_authenticated: true,
+            };
             match template.render() {
                 Ok(html) => Html(html).into_response(),
-                Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+                Err(err) => (
+                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                    err.to_string(),
+                )
+                    .into_response(),
             }
-        },
+        }
         _ => Redirect::to("/admin/api-tokens").into_response(),
     }
 }

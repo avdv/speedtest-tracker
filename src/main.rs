@@ -1,5 +1,5 @@
 // Import all modules from the library
-use speedtest_tracker::{AppState, db, locale_middleware, scheduler};
+use speedtest_tracker::{db, locale_middleware, scheduler, AppState};
 
 rust_i18n::i18n!("locales", fallback = "en");
 

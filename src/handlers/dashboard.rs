@@ -1,12 +1,12 @@
-use crate::{AppState, db::Database, filters, models::Result as SpeedTestResult};
 use crate::locale_middleware::Locale;
+use crate::{db::Database, filters, models::Result as SpeedTestResult, AppState};
 use askama::Template;
 use axum::{
     extract::{Query, State},
     response::{Html, IntoResponse, Response},
 };
+use chrono::{NaiveDateTime, Utc};
 use serde::Deserialize;
-use chrono::{Utc, NaiveDateTime};
 use std::env;
 use std::str::FromStr;
 
@@ -48,7 +48,7 @@ fn default_time_range() -> String {
 
 fn get_next_scheduled_test() -> Option<NaiveDateTime> {
     let schedule_expr = env::var("SPEEDTEST_SCHEDULE").ok()?;
-    
+
     if schedule_expr.is_empty() {
         return None;
     }
@@ -70,7 +70,11 @@ fn get_next_scheduled_test() -> Option<NaiveDateTime> {
     };
 
     // Get the next run time and convert to NaiveDateTime
-    schedule.upcoming(Utc).take(1).next().map(|next| next.naive_utc())
+    schedule
+        .upcoming(Utc)
+        .take(1)
+        .next()
+        .map(|next| next.naive_utc())
 }
 
 pub async fn home_dashboard(
@@ -324,9 +328,13 @@ pub async fn home_dashboard(
         next_speedtest,
         is_authenticated,
     };
-    
+
     match template.render() {
         Ok(html) => Html(html).into_response(),
-        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+        Err(err) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            err.to_string(),
+        )
+            .into_response(),
     }
 }

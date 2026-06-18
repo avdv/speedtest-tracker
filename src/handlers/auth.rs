@@ -1,10 +1,10 @@
-use crate::{filters, AppState, db::Database};
 use crate::locale_middleware::Locale;
+use crate::{db::Database, filters, AppState};
 use askama::Template;
 use axum::{
-    Form,
     extract::State,
-    response::{IntoResponse, Redirect, Response, Html},
+    response::{Html, IntoResponse, Redirect, Response},
+    Form,
 };
 use serde::Deserialize;
 
@@ -16,13 +16,17 @@ pub struct LoginTemplate {
 }
 
 pub async fn login_page(locale: Locale) -> Response {
-    let template = LoginTemplate { 
+    let template = LoginTemplate {
         locale: locale.0,
-        error: None 
+        error: None,
     };
     match template.render() {
         Ok(html) => Html(html).into_response(),
-        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+        Err(err) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            err.to_string(),
+        )
+            .into_response(),
     }
 }
 
@@ -105,7 +109,11 @@ pub async fn login_post(
                     };
                     return match template.render() {
                         Ok(html) => Html(html).into_response(),
-                        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+                        Err(err) => (
+                            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                            err.to_string(),
+                        )
+                            .into_response(),
                     };
                 }
 
@@ -133,7 +141,11 @@ pub async fn login_post(
     };
     match template.render() {
         Ok(html) => Html(html).into_response(),
-        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+        Err(err) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            err.to_string(),
+        )
+            .into_response(),
     }
 }
 

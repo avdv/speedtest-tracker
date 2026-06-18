@@ -1,7 +1,7 @@
 /// Askama template filters for translations and formatting
 use askama::Result;
-use rust_i18n::t;
 use chrono::NaiveDateTime;
+use rust_i18n::t;
 
 /// Translate a key using the provided locale
 /// Usage in template: {{ "general.save"|t(locale) }}

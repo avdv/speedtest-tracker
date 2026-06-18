@@ -1,10 +1,10 @@
-use crate::{filters, AppState, db::Database, models::Schedule};
 use crate::locale_middleware::Locale;
+use crate::{db::Database, filters, models::Schedule, AppState};
 use askama::Template;
 use axum::{
-    Form,
     extract::{Query, State},
     response::{Html, IntoResponse, Redirect, Response},
+    Form,
 };
 use serde::Deserialize;
 
@@ -68,10 +68,14 @@ pub async fn schedules_page(
         message,
         is_authenticated: true,
     };
-    
+
     match template.render() {
         Ok(html) => Html(html).into_response(),
-        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+        Err(err) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            err.to_string(),
+        )
+            .into_response(),
     }
 }
 

@@ -1,7 +1,7 @@
 use crate::{db::Database, speedtest};
+use rand::RngExt;
 use std::env;
 use tokio_cron_scheduler::{Job, JobScheduler};
-use rand::RngExt;
 
 pub struct SpeedtestScheduler {
     scheduler: JobScheduler,

@@ -1,10 +1,10 @@
 use axum::{
     extract::Path,
-    http::{header::REFERER, Uri},
-    response::{Redirect, IntoResponse},
     http::HeaderMap,
+    http::{header::REFERER, Uri},
+    response::{IntoResponse, Redirect},
 };
-use axum_extra::extract::{CookieJar, cookie::Cookie};
+use axum_extra::extract::{cookie::Cookie, CookieJar};
 
 /// Handle language change requests
 /// Route: GET /set-language/:locale
@@ -31,7 +31,11 @@ pub async fn set_language(
     tracing::debug!("Redirecting to: {}", redirect_to);
 
     if !crate::i18n::is_valid_locale(&normalized_locale) {
-        tracing::warn!("Invalid locale requested: {} (normalized: {})", locale, normalized_locale);
+        tracing::warn!(
+            "Invalid locale requested: {} (normalized: {})",
+            locale,
+            normalized_locale
+        );
         // Redirect back to referer or home with default locale
         return (cookies, Redirect::to(&redirect_to));
     }
