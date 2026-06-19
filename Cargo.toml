@@ -45,7 +45,7 @@ tower-sessions = "0.14"
 tower-sessions-sqlx-store = { version = "0.15", default-features = false }
 async-trait = "0.1"
 tokio-cron-scheduler = "0.15"
-cron = "0.16"
+cron = "0.17"
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls", "query"] }
 rust-i18n = "4"
 rust-embed = { version = "8", features = ["include-exclude"] }
