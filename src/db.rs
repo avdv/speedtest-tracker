@@ -27,7 +27,7 @@ impl Database {
         if database_url.starts_with("sqlite") {
             let pool = sqlx::sqlite::SqlitePoolOptions::new()
                 .max_connections(5)
-                .connect(&database_url)
+                .connect(database_url)
                 .await?;
             return Ok(Database::Sqlite(pool));
         }
@@ -36,7 +36,7 @@ impl Database {
         if database_url.starts_with("mysql") {
             let pool = sqlx::mysql::MySqlPoolOptions::new()
                 .max_connections(5)
-                .connect(&database_url)
+                .connect(database_url)
                 .await?;
             return Ok(Database::MySql(pool));
         }
@@ -45,7 +45,7 @@ impl Database {
         if database_url.starts_with("postgres") {
             let pool = sqlx::postgres::PgPoolOptions::new()
                 .max_connections(5)
-                .connect(&database_url)
+                .connect(database_url)
                 .await?;
             return Ok(Database::Postgres(pool));
         }
