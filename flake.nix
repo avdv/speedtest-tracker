@@ -23,6 +23,8 @@
         fenixTargets = builtins.attrNames fx.targets;
 
         supportedTargets = builtins.filter (t: lib.elem t fenixTargets) [
+          # FreeBSD
+          "x86_64-unknown-freebsd"
           # Linux
           "aarch64-unknown-linux-gnu"
           "aarch64-unknown-linux-musl"
@@ -46,15 +48,13 @@
         # Convert fenix rust target triple -> zig target triple
         toZigTarget = triple:
           let
-            parts = builtins.split "-" triple;
+            parts = lib.strings.splitString "-" triple;
             arch = builtins.elemAt parts 0;
-            os = builtins.elemAt parts 4;
-            abi = if (builtins.length parts) > 6 then builtins.elemAt parts 6 else "";
+            vendor = builtins.elemAt parts 1;
+            remaining = lib.lists.drop (if vendor == "unknown" then 2 else 1) parts;
             archFixed = if arch == "armv7" then "arm" else arch;
-            # rebuild: arch-os(-abi) where abi may already contain musleabihf etc.
-            base = if abi != "" then "${archFixed}-${os}-${abi}" else "${archFixed}-${os}";
           in
-          base;
+            "${archFixed}-${lib.strings.join "-" remaining}";
 
         # Helper to make zig wrapper scripts that inject -target when needed
         makeZigWrappers = target: pkgs.runCommand "zig-wrappers-${target}" { }
@@ -97,58 +97,98 @@
           '';
 
         # Build cross shells for every fenix target except hostTripleFixed
-        crossShells = builtins.map
-          (target:
-            let
-              # try to find matching rust std in fx.targets.<target>.stable.rust-std or fx.stable.targets.<target>.rust-std
-              targetAttrs = builtins.getAttr target fx.targets;
-              rustStd =
-                if targetAttrs != null && targetAttrs.stable != null && targetAttrs.stable.rust-std != null then
-                  targetAttrs.stable.rust-std
-                else
-                # safe lookup: fx.targets may directly hold rust-std attr
-                  builtins.getAttrOr null ("rust-std") targetAttrs;
-              # combine rustc/cargo/clippy plus rust std if available
-              rustPkgs =
-                if rustStd != null then fx.combine [ fx.stable.rustc fx.stable.cargo fx.stable.clippy rustStd ]
-                else fx.combine [ fx.stable.rustc fx.stable.cargo fx.stable.clippy ];
-              zigWrappers = makeZigWrappers target;
-            in
-            {
-              "cross-${target}" = pkgs.mkShellNoCC {
-                name = "cross-${target}";
-                packages = [
-                  rustPkgs
-                  pkgs.tailwindcss_4
-                  pkgs.zig
-                ];
+         crossShells =
+           builtins.map
+             (
+               target:
+               let
+                 # try to find matching rust std in fx.targets.<target>.stable.rust-std or fx.stable.targets.<target>.rust-std
+                 targetAttrs = builtins.getAttr target fx.targets;
+                 rustStd =
+                   if targetAttrs != null && targetAttrs.stable != null && targetAttrs.stable.rust-std != null then
+                     targetAttrs.stable.rust-std
+                   else
+                     # safe lookup: fx.targets may directly hold rust-std attr
+                     builtins.getAttrOr null ("rust-std") targetAttrs;
+                 # combine rustc/cargo/clippy plus rust std if available
+                 rustPkgs =
+                   if rustStd != null then
+                     fx.combine [
+                       fx.stable.rustc
+                       fx.stable.cargo
+                       fx.stable.clippy
+                       rustStd
+                     ]
+                   else
+                     fx.combine [
+                       fx.stable.rustc
+                       fx.stable.cargo
+                       fx.stable.clippy
+                     ];
+                 zigWrappers = makeZigWrappers target;
 
-                env =
-                  let
-                    # sanitize env var name from target triple for cargo variable
-                    cargoVar = "CARGO_TARGET_${builtins.replaceStrings [ "-" ] [ "_" ] (lib.toUpper target)}_LINKER";
-                    ccVar = "CC_${builtins.replaceStrings [ "-" ] [ "_" ] target}";
-                    cxxVar = "CXX_${builtins.replaceStrings [ "-" ] [ "_" ] target}";
-                    arVar = "AR_${builtins.replaceStrings [ "-" ] [ "_" ] target}";
-                    rustflagsVar = "CARGO_TARGET_${builtins.replaceStrings [ "-" ] [ "_" ] (lib.toUpper target)}_RUSTFLAGS";
-                  in
-                  {
-                    "CARGO_BUILD_TARGET" = target;
-                    # point to our wrappers
-                    "${cargoVar}" = "${zigWrappers}/bin/zig-cc";
-                    "${ccVar}" = "${zigWrappers}/bin/zig-cc";
-                    "${cxxVar}" = "${zigWrappers}/bin/zig-cxx";
-                    "${arVar}" = "${zigWrappers}/bin/zig-ar";
-                    # prevent rust from linking its own crt if using musl-like targets
-                    "${rustflagsVar}" = "-C link-self-contained=no";
-                  };
+                 freebsdLibs =
+                   pkgs.runCommand "freebsd-libs" { }
+                     # cross building for FreeBSD fails with "unable to find dynamic system library"
+                     # since these are requested on the command line, but are not actually needed
+                     ''
+                       mkdir -p $out
+                       export ZIG_GLOBAL_CACHE_DIR=$PWD/zcache
+                       mkdir "$ZIG_GLOBAL_CACHE_DIR"
+                       ${zigWrappers}/bin/zig-cc -shared -fPIC -o $out/libempty.so -xc - < /dev/null
+                       for lib in memstat devstat kvm procstat; do
+                           ln -s "$out/libempty.so" "$out/lib$lib.so"
+                       done
+                     '';
+               in
+               {
+                 "cross-${target}" = pkgs.mkShellNoCC {
+                   name = "cross-${target}";
+                   packages = [
+                     rustPkgs
+                     pkgs.tailwindcss_4
+                     pkgs.zig
+                   ];
 
-                shellHook = ''
-                  echo "Cross-compilation shell for target: ${target} (via zig cc)"
-                '';
-              };
-            })
-          (builtins.filter (t: t != hostTriple && (builtins.length (lib.strings.split "-" t) > 4)) supportedTargets);
+                   env =
+                     let
+                       # sanitize env var name from target triple for cargo variable
+                       cargoVar = "CARGO_TARGET_${builtins.replaceStrings [ "-" ] [ "_" ] (lib.toUpper target)}_LINKER";
+                       ccVar = "CC_${builtins.replaceStrings [ "-" ] [ "_" ] target}";
+                       cxxVar = "CXX_${builtins.replaceStrings [ "-" ] [ "_" ] target}";
+                       arVar = "AR_${builtins.replaceStrings [ "-" ] [ "_" ] target}";
+                       rustflagsVar = "CARGO_TARGET_${
+                         builtins.replaceStrings [ "-" ] [ "_" ] (lib.toUpper target)
+                       }_RUSTFLAGS";
+                     in
+                     {
+                       "CARGO_BUILD_TARGET" = target;
+                       # point to our wrappers
+                       "${cargoVar}" = "${zigWrappers}/bin/zig-cc";
+                       "${ccVar}" = "${zigWrappers}/bin/zig-cc";
+                       "${cxxVar}" = "${zigWrappers}/bin/zig-cxx";
+                       "${arVar}" = "${zigWrappers}/bin/zig-ar";
+                     }
+                     // lib.optionalAttrs (lib.strings.hasInfix "musl" target) {
+                       # add --target flag to rustflags
+                       # prevent rust from linking its own crt if using musl-like targets
+                       "${rustflagsVar}" = "-C link-self-contained=no";
+                     }
+                     // lib.optionalAttrs (lib.strings.hasInfix "freebsd" target) {
+                       "${rustflagsVar}" = "-C link-arg=-L${freebsdLibs}";
+                     };
+
+                   shellHook = ''
+                     echo "Cross-compilation shell for target: ${target} (via zig cc)"
+                   '';
+                 };
+               }
+             )
+             (
+               builtins.filter (
+                 t: t != hostTriple && (builtins.length (lib.strings.split "-" t) > 4)
+               ) supportedTargets
+             );
 
         defaultShell = pkgs.mkShell {
           packages = [
