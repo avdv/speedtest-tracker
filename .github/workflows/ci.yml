@@ -36,7 +36,7 @@ jobs:
           restore-keys: ${{ runner.os }}-cargo-
 
       - name: "Run clippy"
-        run: nix develop -c cargo clippy
+        run: nix develop -c cargo clippy --all-targets --all-features -- --deny warnings
 
       - name: "Check formatting"
         run: nix develop -c cargo fmt --all --check
