@@ -105,7 +105,7 @@ pub async fn login_post(
                     tracing::error!("Failed to set session: {}", e);
                     let template = LoginTemplate {
                         locale: locale.0.clone(),
-                        error: Some(format!("Login failed - session error: {}", e)),
+                        error: Some(format!("Login failed - session error: {e}")),
                     };
                     return match template.render() {
                         Ok(html) => Html(html).into_response(),

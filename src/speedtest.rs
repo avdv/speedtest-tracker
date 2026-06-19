@@ -90,7 +90,7 @@ pub async fn run_speedtest(server_id: Option<i64>) -> Result<SpeedtestResult, St
     tracing::info!(
         "Starting speedtest{}",
         if let Some(id) = server_id {
-            format!(" with server {}", id)
+            format!(" with server {id}")
         } else {
             String::new()
         }
@@ -103,7 +103,7 @@ pub async fn run_speedtest(server_id: Option<i64>) -> Result<SpeedtestResult, St
         .arg("--format=json");
 
     if let Some(id) = server_id {
-        cmd.arg(format!("--server-id={}", id));
+        cmd.arg(format!("--server-id={id}"));
     }
 
     tracing::debug!("Executing: {:?}", cmd);
@@ -111,15 +111,14 @@ pub async fn run_speedtest(server_id: Option<i64>) -> Result<SpeedtestResult, St
     // Run speedtest
     let output = cmd.output().map_err(|e| {
         format!(
-            "Failed to execute speedtest command: {}. Is 'speedtest' CLI installed?",
-            e
+            "Failed to execute speedtest command: {e}. Is 'speedtest' CLI installed?"
         )
     })?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         tracing::error!("Speedtest failed: {}", stderr);
-        return Err(format!("Speedtest failed: {}", stderr));
+        return Err(format!("Speedtest failed: {stderr}"));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -127,7 +126,7 @@ pub async fn run_speedtest(server_id: Option<i64>) -> Result<SpeedtestResult, St
 
     // Parse JSON result
     let ookla_result: OoklaResult = serde_json::from_str(&stdout)
-        .map_err(|e| format!("Failed to parse speedtest result: {}", e))?;
+        .map_err(|e| format!("Failed to parse speedtest result: {e}"))?;
 
     // Convert to our format
     let result = SpeedtestResult {
@@ -179,7 +178,7 @@ pub async fn save_result(
             .bind(scheduled)
             .execute(pool)
             .await
-            .map_err(|e| format!("Failed to save result: {}", e))?
+            .map_err(|e| format!("Failed to save result: {e}"))?
             .last_insert_rowid()
         },
         #[cfg(feature = "mysql")]

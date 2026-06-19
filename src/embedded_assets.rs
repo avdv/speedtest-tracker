@@ -39,7 +39,7 @@ where
             let hash = hex::encode(content.metadata.sha256_hash());
             builder = builder.header(
                 header::ETAG,
-                HeaderValue::from_str(&format!("\"{}\"", hash)).unwrap(),
+                HeaderValue::from_str(&format!("\"{hash}\"")).unwrap(),
             );
 
             // Add cache-control headers

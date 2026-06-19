@@ -55,7 +55,7 @@ fn get_next_scheduled_test() -> Option<NaiveDateTime> {
 
     // Convert 5-field cron to 6-field (add seconds at start) if needed
     let schedule_expr = if schedule_expr.split_whitespace().count() == 5 {
-        format!("0 {}", schedule_expr)
+        format!("0 {schedule_expr}")
     } else {
         schedule_expr
     };

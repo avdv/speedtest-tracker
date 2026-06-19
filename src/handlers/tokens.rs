@@ -33,8 +33,8 @@ pub async fn api_tokens_page(
         None
     };
 
-    let new_token = params.get("token").map(|s| s.to_string());
-    let new_token_name = params.get("token_name").map(|s| s.to_string());
+    let new_token = params.get("token").cloned();
+    let new_token_name = params.get("token_name").cloned();
 
     let tokens = match &state.db {
         #[cfg(feature = "sqlite")]

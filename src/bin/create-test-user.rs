@@ -10,21 +10,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let email = args
         .get(1)
-        .map(|s| s.as_str())
-        .unwrap_or("admin@example.com");
-    let password = args.get(2).map(|s| s.as_str()).unwrap_or("password");
-    let name = args.get(3).map(|s| s.as_str()).unwrap_or("Admin");
-    let role = args.get(4).map(|s| s.as_str()).unwrap_or("admin");
+        .map_or("admin@example.com", std::string::String::as_str);
+    let password = args.get(2).map_or("password", std::string::String::as_str);
+    let name = args.get(3).map_or("Admin", std::string::String::as_str);
+    let role = args.get(4).map_or("admin", std::string::String::as_str);
 
     let database_url = env::var("DATABASE_URL")
         .unwrap_or_else(|_| "sqlite:./database/database.sqlite".to_string());
 
     println!("Creating test user...");
-    println!("  Email: {}", email);
-    println!("  Password: {}", password);
-    println!("  Name: {}", name);
-    println!("  Role: {}", role);
-    println!("  Database: {}", database_url);
+    println!("  Email: {email}");
+    println!("  Password: {password}");
+    println!("  Name: {name}");
+    println!("  Role: {role}");
+    println!("  Database: {database_url}");
     println!();
 
     // Hash password
@@ -140,8 +139,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("✅ User created successfully!");
         println!();
         println!("Login with:");
-        println!("  Email: {}", email);
-        println!("  Password: {}", password);
+        println!("  Email: {email}");
+        println!("  Password: {password}");
         println!();
         println!("Start the server:");
         println!("  cargo run --release");

@@ -34,7 +34,7 @@ fn build_tailwind_css_if_needed() {
 
     // Check if input file exists
     if !Path::new(input).exists() {
-        eprintln!("Warning: {} not found, skipping CSS build", input);
+        eprintln!("Warning: {input} not found, skipping CSS build");
         return;
     }
 
@@ -46,8 +46,7 @@ fn build_tailwind_css_if_needed() {
         Ok(stored_hash) if stored_hash.trim() == current_hash => !Path::new(output).exists(),
         Ok(stored_hash) => {
             println!(
-                "cargo:warning=Rebuilding CSS due to hash change (stored: {}, current: {})",
-                stored_hash, current_hash
+                "cargo:warning=Rebuilding CSS due to hash change (stored: {stored_hash}, current: {current_hash})"
             );
             true
         }
@@ -80,10 +79,10 @@ fn build_tailwind_css_if_needed() {
             let _ = fs::write(hash_file, current_hash);
         }
         Ok(status) => {
-            eprintln!("Warning: tailwindcss exited with status: {}", status);
+            eprintln!("Warning: tailwindcss exited with status: {status}");
         }
         Err(e) => {
-            eprintln!("Warning: Failed to run tailwindcss: {}", e);
+            eprintln!("Warning: Failed to run tailwindcss: {e}");
         }
     }
 }
@@ -107,8 +106,8 @@ fn calculate_source_hash(css_file: &str) -> String {
 
 fn hash_templates_recursive(dir: &str, hasher: &mut DefaultHasher) {
     if let Ok(entries) = fs::read_dir(dir) {
-        let mut entries: Vec<_> = entries.filter_map(|e| e.ok()).collect();
-        entries.sort_by_key(|e| e.path());
+        let mut entries: Vec<_> = entries.filter_map(std::result::Result::ok).collect();
+        entries.sort_by_key(std::fs::DirEntry::path);
 
         for entry in entries {
             let path = entry.path();
@@ -116,7 +115,7 @@ fn hash_templates_recursive(dir: &str, hasher: &mut DefaultHasher) {
                 if let Some(path_str) = path.to_str() {
                     hash_templates_recursive(path_str, hasher);
                 }
-            } else if path.extension().map(|ext| ext == "html").unwrap_or(false) {
+            } else if path.extension().is_some_and(|ext| ext == "html") {
                 if let Ok(mut file) = fs::File::open(&path) {
                     let mut contents = Vec::new();
                     if file.read_to_end(&mut contents).is_ok() {

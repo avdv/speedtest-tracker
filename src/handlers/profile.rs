@@ -92,7 +92,16 @@ pub async fn profile_update(
         #[cfg(feature = "sqlite")]
         Database::Sqlite(pool) => {
             let result = if let Some(password) = form.password {
-                if !password.is_empty() {
+                if password.is_empty() {
+                    sqlx::query(
+                        "UPDATE users SET name = ?, email = ?, updated_at = datetime('now') 
+                         WHERE role = 'admin' LIMIT 1",
+                    )
+                    .bind(&form.name)
+                    .bind(&form.email)
+                    .execute(pool)
+                    .await
+                } else {
                     let hashed = bcrypt::hash(&password, 12).unwrap();
                     sqlx::query(
                         "UPDATE users SET name = ?, email = ?, password = ?, updated_at = datetime('now') 
@@ -101,15 +110,6 @@ pub async fn profile_update(
                     .bind(&form.name)
                     .bind(&form.email)
                     .bind(hashed)
-                    .execute(pool)
-                    .await
-                } else {
-                    sqlx::query(
-                        "UPDATE users SET name = ?, email = ?, updated_at = datetime('now') 
-                         WHERE role = 'admin' LIMIT 1",
-                    )
-                    .bind(&form.name)
-                    .bind(&form.email)
                     .execute(pool)
                     .await
                 }

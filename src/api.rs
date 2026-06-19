@@ -91,7 +91,7 @@ fn format_bits(bits: f64) -> String {
     if mbps >= 1000.0 {
         format!("{:.2} Gbps", mbps / 1000.0)
     } else {
-        format!("{:.2} Mbps", mbps)
+        format!("{mbps:.2} Mbps")
     }
 }
 
@@ -103,7 +103,7 @@ fn format_bytes(bytes: f64) -> String {
     } else if bytes >= 1024.0 {
         format!("{:.0} KB", bytes / 1024.0)
     } else {
-        format!("{:.0} B", bytes)
+        format!("{bytes:.0} B")
     }
 }
 
@@ -173,54 +173,51 @@ pub async fn legacy_latest(State(state): State<AppState>) -> impl IntoResponse {
         },
     };
 
-    match result {
-        Some(r) => {
-            // Parse server info from data JSON if available
-            let (server_id, server_host, server_name, result_url) = r
-                .data
-                .as_ref()
-                .and_then(|d| serde_json::from_str::<serde_json::Value>(d).ok())
-                .and_then(|json| {
-                    let server = json.get("server")?;
-                    let result = json.get("result")?;
-                    Some((
-                        server.get("id").and_then(|v| v.as_i64()),
-                        server
-                            .get("host")
-                            .and_then(|v| v.as_str().map(String::from)),
-                        server
-                            .get("name")
-                            .and_then(|v| v.as_str().map(String::from)),
-                        result.get("url").and_then(|v| v.as_str().map(String::from)),
-                    ))
-                })
-                .unwrap_or((None, None, None, None));
+    if let Some(r) = result {
+        // Parse server info from data JSON if available
+        let (server_id, server_host, server_name, result_url) = r
+            .data
+            .as_ref()
+            .and_then(|d| serde_json::from_str::<serde_json::Value>(d).ok())
+            .and_then(|json| {
+                let server = json.get("server")?;
+                let result = json.get("result")?;
+                Some((
+                    server.get("id").and_then(serde_json::Value::as_i64),
+                    server
+                        .get("host")
+                        .and_then(|v| v.as_str().map(String::from)),
+                    server
+                        .get("name")
+                        .and_then(|v| v.as_str().map(String::from)),
+                    result.get("url").and_then(|v| v.as_str().map(String::from)),
+                ))
+            })
+            .unwrap_or((None, None, None, None));
 
-            let response = serde_json::json!({
-                "message": "ok",
-                "data": {
-                    "id": r.id,
-                    "ping": r.ping,
-                    "download": r.download_mbps(),
-                    "upload": r.upload_mbps(),
-                    "server_id": server_id,
-                    "server_host": server_host,
-                    "server_name": server_name,
-                    "url": result_url,
-                    "scheduled": r.scheduled,
-                    "failed": r.status == "failed",
-                    "created_at": r.created_at.format("%Y-%m-%dT%H:%M:%S").to_string(),
-                    "updated_at": r.updated_at.format("%Y-%m-%dT%H:%M:%S").to_string(),
-                }
-            });
-            (StatusCode::OK, Json(response))
-        }
-        None => {
-            let response = serde_json::json!({
-                "message": "No results found."
-            });
-            (StatusCode::NOT_FOUND, Json(response))
-        }
+        let response = serde_json::json!({
+            "message": "ok",
+            "data": {
+                "id": r.id,
+                "ping": r.ping,
+                "download": r.download_mbps(),
+                "upload": r.upload_mbps(),
+                "server_id": server_id,
+                "server_host": server_host,
+                "server_name": server_name,
+                "url": result_url,
+                "scheduled": r.scheduled,
+                "failed": r.status == "failed",
+                "created_at": r.created_at.format("%Y-%m-%dT%H:%M:%S").to_string(),
+                "updated_at": r.updated_at.format("%Y-%m-%dT%H:%M:%S").to_string(),
+            }
+        });
+        (StatusCode::OK, Json(response))
+    } else {
+        let response = serde_json::json!({
+            "message": "No results found."
+        });
+        (StatusCode::NOT_FOUND, Json(response))
     }
 }
 
@@ -322,21 +319,18 @@ pub async fn latest_result(State(state): State<AppState>) -> impl IntoResponse {
         .expect("fetch latest result"),
     };
 
-    match result {
-        Some(r) => {
-            let response = ApiResponse {
-                data: Some(ResultResponse::from(r)),
-                message: "Success".to_string(),
-            };
-            (StatusCode::OK, Json(response))
-        }
-        None => {
-            let response: ApiResponse<ResultResponse> = ApiResponse {
-                data: None,
-                message: "No results found.".to_string(),
-            };
-            (StatusCode::NOT_FOUND, Json(response))
-        }
+    if let Some(r) = result {
+        let response = ApiResponse {
+            data: Some(ResultResponse::from(r)),
+            message: "Success".to_string(),
+        };
+        (StatusCode::OK, Json(response))
+    } else {
+        let response: ApiResponse<ResultResponse> = ApiResponse {
+            data: None,
+            message: "No results found.".to_string(),
+        };
+        (StatusCode::NOT_FOUND, Json(response))
     }
 }
 
@@ -369,21 +363,18 @@ pub async fn get_result(State(state): State<AppState>, Path(id): Path<i64>) -> i
         }
     };
 
-    match result {
-        Some(r) => {
-            let response = ApiResponse {
-                data: Some(ResultResponse::from(r)),
-                message: "Success".to_string(),
-            };
-            (StatusCode::OK, Json(response))
-        }
-        None => {
-            let response: ApiResponse<ResultResponse> = ApiResponse {
-                data: None,
-                message: "Result not found.".to_string(),
-            };
-            (StatusCode::NOT_FOUND, Json(response))
-        }
+    if let Some(r) = result {
+        let response = ApiResponse {
+            data: Some(ResultResponse::from(r)),
+            message: "Success".to_string(),
+        };
+        (StatusCode::OK, Json(response))
+    } else {
+        let response: ApiResponse<ResultResponse> = ApiResponse {
+            data: None,
+            message: "Result not found.".to_string(),
+        };
+        (StatusCode::NOT_FOUND, Json(response))
     }
 }
 
@@ -669,7 +660,7 @@ pub async fn run_speedtest_api(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ApiResponse::<()> {
                     data: None,
-                    message: format!("Speedtest failed: {}", e),
+                    message: format!("Speedtest failed: {e}"),
                 }),
             )
                 .into_response();
@@ -685,7 +676,7 @@ pub async fn run_speedtest_api(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ApiResponse::<()> {
                     data: None,
-                    message: format!("Test completed but failed to save: {}", e),
+                    message: format!("Test completed but failed to save: {e}"),
                 }),
             )
                 .into_response();
@@ -735,7 +726,7 @@ pub async fn run_speedtest_api(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ApiResponse::<()> {
                     data: None,
-                    message: format!("Test saved but failed to retrieve: {}", e),
+                    message: format!("Test saved but failed to retrieve: {e}"),
                 }),
             )
                 .into_response()
