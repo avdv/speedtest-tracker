@@ -110,9 +110,7 @@ pub async fn run_speedtest(server_id: Option<i64>) -> Result<SpeedtestResult, St
 
     // Run speedtest
     let output = cmd.output().map_err(|e| {
-        format!(
-            "Failed to execute speedtest command: {e}. Is 'speedtest' CLI installed?"
-        )
+        format!("Failed to execute speedtest command: {e}. Is 'speedtest' CLI installed?")
     })?;
 
     if !output.status.success() {
