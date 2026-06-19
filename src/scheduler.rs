@@ -13,7 +13,7 @@ impl SpeedtestScheduler {
 
         // Read schedule from environment variables
         let schedule_expr_var = env::var("SPEEDTEST_SCHEDULE");
-        println!("SPEEDTEST_SCHEDULE: {:?}", schedule_expr_var);
+        println!("SPEEDTEST_SCHEDULE: {schedule_expr_var:?}");
         let schedule_expr = schedule_expr_var.unwrap_or_else(|_| "0 0 * * * *".to_string()); // Default: every hour
 
         let server_ids_str = env::var("SPEEDTEST_SERVERS").ok();
@@ -25,7 +25,7 @@ impl SpeedtestScheduler {
 
         // Convert 5-field cron to 6-field (add seconds at start) if needed
         let schedule_expr = if schedule_expr.split_whitespace().count() == 5 {
-            format!("0 {}", schedule_expr)
+            format!("0 {schedule_expr}")
         } else {
             schedule_expr
         };
@@ -57,12 +57,12 @@ impl SpeedtestScheduler {
                         .filter_map(|s| s.trim().parse::<i64>().ok())
                         .collect();
 
-                    if !ids.is_empty() {
+                    if ids.is_empty() {
+                        None
+                    } else {
                         // Pick a random server from the list
                         let idx = rand::rng().random_range(0..ids.len());
                         Some(ids[idx])
-                    } else {
-                        None
                     }
                 } else {
                     None

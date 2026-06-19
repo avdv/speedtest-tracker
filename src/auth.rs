@@ -152,7 +152,7 @@ pub async fn require_auth(
                     .execute(pool)
                     .await;
                 }
-            };
+            }
         });
 
         // Store token in request extensions for later use if needed

@@ -70,6 +70,7 @@ pub struct PersonalAccessToken {
 }
 
 impl PersonalAccessToken {
+    #[must_use]
     pub fn is_read(&self) -> bool {
         if let Some(abilities) = &self.abilities {
             return abilities.contains("read");
@@ -79,16 +80,19 @@ impl PersonalAccessToken {
 }
 
 impl Result {
+    #[must_use]
     pub fn download_mbps(&self) -> f64 {
         // Database stores bandwidth in bytes/second, multiply by 8 to get bits/second, then divide by 1M for Mbps
         self.download.unwrap_or(0) as f64 * 8.0 / 1_000_000.0
     }
 
+    #[must_use]
     pub fn upload_mbps(&self) -> f64 {
         // Database stores bandwidth in bytes/second, multiply by 8 to get bits/second, then divide by 1M for Mbps
         self.upload.unwrap_or(0) as f64 * 8.0 / 1_000_000.0
     }
 
+    #[must_use]
     pub fn server_info(&self) -> Option<ServerInfo> {
         // Parse server info from JSON data field if available
         self.data.as_ref().and_then(|json_str| {
@@ -142,6 +146,7 @@ pub struct Schedule {
 
 impl Schedule {
     #[allow(dead_code)]
+    #[must_use]
     pub fn get_server_ids(&self) -> Vec<i64> {
         self.server_ids
             .as_ref()

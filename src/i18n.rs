@@ -1,6 +1,7 @@
 //! This module provides i18n utilities for the speedtest-tracker application
 
 /// Normalize locale string to match available translations
+#[must_use]
 pub fn normalize_locale(lang: &str) -> String {
     // Replace underscores with hyphens and lowercase
     let normalized = lang.replace('_', "-").to_lowercase();
@@ -22,6 +23,7 @@ pub fn normalize_locale(lang: &str) -> String {
 }
 
 /// Check if a locale is supported
+#[must_use]
 pub fn is_valid_locale(locale: &str) -> bool {
     matches!(
         locale,
@@ -31,6 +33,7 @@ pub fn is_valid_locale(locale: &str) -> bool {
 
 /// Get list of all available locales with their display names
 #[allow(dead_code)]
+#[must_use]
 pub fn available_locales() -> Vec<(&'static str, &'static str)> {
     vec![
         ("en", "English"),

@@ -51,8 +51,7 @@ impl Database {
         }
 
         panic!(
-            "Database URL '{}' not supported or feature not enabled. Enable the corresponding feature: sqlite, mysql, or postgres",
-            database_url
+            "Database URL '{database_url}' not supported or feature not enabled. Enable the corresponding feature: sqlite, mysql, or postgres"
         );
     }
 
