@@ -59,7 +59,7 @@ fn build_tailwind_css_if_needed() {
     }
 
     // Check if tailwindcss is available
-    let tailwind_check = Command::new("tailwindcss").args(&["--help"]).output();
+    let tailwind_check = Command::new("tailwindcss").args(["--help"]).output();
 
     if tailwind_check.is_err() {
         eprintln!("Warning: tailwindcss not found, skipping CSS build");
@@ -70,7 +70,7 @@ fn build_tailwind_css_if_needed() {
 
     // Run tailwindcss build
     let status = Command::new("tailwindcss")
-        .args(&["-i", input, "-o", output, "--minify"])
+        .args(["-i", input, "-o", output, "--minify"])
         .status();
 
     match status {
