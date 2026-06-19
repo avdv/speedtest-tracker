@@ -4,10 +4,16 @@
         "config:recommended",
         "helpers:pinGitHubActionDigests"
     ],
-    "ignoreManagers": [
-        "composer",
-        "dockerfile",
-        "docker-compose",
-        "npm"
-    ]
+    "composer": {
+        "enabled": false
+    },
+    "dockerfile": {
+        "enabled": false
+    },
+    "docker-compose": {
+        "enabled": false
+    },
+    "npm": {
+        "enabled": false
+    }
 }
