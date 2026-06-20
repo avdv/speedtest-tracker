@@ -13,6 +13,9 @@
     "docker-compose": {
         "enabled": false
     },
+    "nix": {
+        "enabled": true
+    },
     "npm": {
         "enabled": false
     }
