@@ -22,6 +22,7 @@ yarn-error.log
 /.phpunit.cache
 /.vscode
 /.direnv
+/.pre-commit-config.yaml
 
 # AI and Boost assets
 /.agents

@@ -6,10 +6,19 @@
     flake-utils.url = "github:numtide/flake-utils";
     fenix.url = "github:nix-community/fenix";
     fenix.inputs.nixpkgs.follows = "nixpkgs";
+    git-hooks.url = "github:cachix/git-hooks.nix";
   };
 
-  outputs = { self, nixpkgs, flake-utils, fenix }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      fenix,
+      git-hooks,
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
         fx = fenix.packages.${system};
@@ -23,9 +32,9 @@
         fenixTargets = builtins.attrNames fx.targets;
 
         supportedTargets = builtins.filter (t: lib.elem t fenixTargets) [
-          # FreeBSD
+          # FreeBSD (x86_64 only)
           "x86_64-unknown-freebsd"
-          # Linux
+          # Linux (i386, x86_64, arm32, arm32hf, and arm64)
           "aarch64-unknown-linux-gnu"
           "aarch64-unknown-linux-musl"
           "arm-unknown-linux-gnueabi"
@@ -38,15 +47,16 @@
           "armv7-unknown-linux-musleabihf"
           "x86_64-unknown-linux-gnu"
           "x86_64-unknown-linux-musl"
-          # Mac
+          # Mac (arm64, x86_64)
           "aarch64-apple-darwin"
           "x86_64-apple-darwin"
-          # Windows
+          # Windows (x86_64 only)
           "x86_64-pc-windows-gnu"
         ];
 
         # Convert fenix rust target triple -> zig target triple
-        toZigTarget = triple:
+        toZigTarget =
+          triple:
           let
             parts = lib.strings.splitString "-" triple;
             arch = builtins.elemAt parts 0;
@@ -54,11 +64,12 @@
             remaining = lib.lists.drop (if vendor == "unknown" then 2 else 1) parts;
             archFixed = if arch == "armv7" then "arm" else arch;
           in
-            "${archFixed}-${lib.strings.join "-" remaining}";
+          "${archFixed}-${lib.strings.join "-" remaining}";
 
         # Helper to make zig wrapper scripts that inject -target when needed
-        makeZigWrappers = target: pkgs.runCommand "zig-wrappers-${target}" { }
-          ''
+        makeZigWrappers =
+          target:
+          pkgs.runCommand "zig-wrappers-${target}" { } ''
             mkdir -p $out/bin
             cat > $out/bin/zig-target <<'EOF'
             #!${pkgs.stdenv.shell}
@@ -97,100 +108,104 @@
           '';
 
         # Build cross shells for every fenix target except hostTripleFixed
-         crossShells =
-           builtins.map
-             (
-               target:
-               let
-                 # try to find matching rust std in fx.targets.<target>.stable.rust-std or fx.stable.targets.<target>.rust-std
-                 targetAttrs = builtins.getAttr target fx.targets;
-                 rustStd =
-                   if targetAttrs != null && targetAttrs.stable != null && targetAttrs.stable.rust-std != null then
-                     targetAttrs.stable.rust-std
-                   else
-                     # safe lookup: fx.targets may directly hold rust-std attr
-                     builtins.getAttrOr null ("rust-std") targetAttrs;
-                 # combine rustc/cargo/clippy plus rust std if available
-                 rustPkgs =
-                   if rustStd != null then
-                     fx.combine [
-                       fx.stable.rustc
-                       fx.stable.cargo
-                       fx.stable.clippy
-                       rustStd
-                     ]
-                   else
-                     fx.combine [
-                       fx.stable.rustc
-                       fx.stable.cargo
-                       fx.stable.clippy
-                     ];
-                 zigWrappers = makeZigWrappers target;
+        crossShells =
+          builtins.map
+            (
+              target:
+              let
+                # try to find matching rust std in fx.targets.<target>.stable.rust-std or fx.stable.targets.<target>.rust-std
+                targetAttrs = builtins.getAttr target fx.targets;
+                rustStd =
+                  if targetAttrs != null && targetAttrs.stable != null && targetAttrs.stable.rust-std != null then
+                    targetAttrs.stable.rust-std
+                  else
+                    # safe lookup: fx.targets may directly hold rust-std attr
+                    builtins.getAttrOr null ("rust-std") targetAttrs;
+                # combine rustc/cargo/clippy plus rust std if available
+                rustPkgs =
+                  if rustStd != null then
+                    fx.combine [
+                      fx.stable.rustc
+                      fx.stable.cargo
+                      fx.stable.clippy
+                      rustStd
+                    ]
+                  else
+                    fx.combine [
+                      fx.stable.rustc
+                      fx.stable.cargo
+                      fx.stable.clippy
+                    ];
+                zigWrappers = makeZigWrappers target;
 
-                 freebsdLibs =
-                   pkgs.runCommand "freebsd-libs" { }
-                     # cross building for FreeBSD fails with "unable to find dynamic system library"
-                     # since these are requested on the command line, but are not actually needed
-                     ''
-                       mkdir -p $out
-                       export ZIG_GLOBAL_CACHE_DIR=$PWD/zcache
-                       mkdir "$ZIG_GLOBAL_CACHE_DIR"
-                       ${zigWrappers}/bin/zig-cc -shared -fPIC -o $out/libempty.so -xc - < /dev/null
-                       for lib in memstat devstat kvm procstat; do
-                           ln -s "$out/libempty.so" "$out/lib$lib.so"
-                       done
-                     '';
-               in
-               {
-                 "cross-${target}" = pkgs.mkShellNoCC {
-                   name = "cross-${target}";
-                   packages = [
-                     rustPkgs
-                     pkgs.tailwindcss_4
-                     pkgs.zig
-                   ];
+                freebsdLibs =
+                  pkgs.runCommand "freebsd-libs" { }
+                    # cross building for FreeBSD fails with "unable to find dynamic system library"
+                    # since these are requested on the command line, but are not actually needed
+                    ''
+                      mkdir -p $out
+                      export ZIG_GLOBAL_CACHE_DIR=$PWD/zcache
+                      mkdir "$ZIG_GLOBAL_CACHE_DIR"
+                      ${zigWrappers}/bin/zig-cc -shared -fPIC -o $out/libempty.so -xc - < /dev/null
+                      for lib in memstat devstat kvm procstat; do
+                          ln -s "$out/libempty.so" "$out/lib$lib.so"
+                      done
+                    '';
+              in
+              {
+                "cross-${target}" = pkgs.mkShellNoCC {
+                  name = "cross-${target}";
+                  packages = [
+                    rustPkgs
+                    pkgs.tailwindcss_4
+                    pkgs.zig
+                  ];
 
-                   env =
-                     let
-                       # sanitize env var name from target triple for cargo variable
-                       cargoVar = "CARGO_TARGET_${builtins.replaceStrings [ "-" ] [ "_" ] (lib.toUpper target)}_LINKER";
-                       ccVar = "CC_${builtins.replaceStrings [ "-" ] [ "_" ] target}";
-                       cxxVar = "CXX_${builtins.replaceStrings [ "-" ] [ "_" ] target}";
-                       arVar = "AR_${builtins.replaceStrings [ "-" ] [ "_" ] target}";
-                       rustflagsVar = "CARGO_TARGET_${
-                         builtins.replaceStrings [ "-" ] [ "_" ] (lib.toUpper target)
-                       }_RUSTFLAGS";
-                     in
-                     {
-                       "CARGO_BUILD_TARGET" = target;
-                       # point to our wrappers
-                       "${cargoVar}" = "${zigWrappers}/bin/zig-cc";
-                       "${ccVar}" = "${zigWrappers}/bin/zig-cc";
-                       "${cxxVar}" = "${zigWrappers}/bin/zig-cxx";
-                       "${arVar}" = "${zigWrappers}/bin/zig-ar";
-                     }
-                     // lib.optionalAttrs (lib.strings.hasInfix "musl" target) {
-                       # add --target flag to rustflags
-                       # prevent rust from linking its own crt if using musl-like targets
-                       "${rustflagsVar}" = "-C link-self-contained=no";
-                     }
-                     // lib.optionalAttrs (lib.strings.hasInfix "freebsd" target) {
-                       "${rustflagsVar}" = "-C link-arg=-L${freebsdLibs}";
-                     };
+                  env =
+                    let
+                      # sanitize env var name from target triple for cargo variable
+                      cargoVar = "CARGO_TARGET_${builtins.replaceStrings [ "-" ] [ "_" ] (lib.toUpper target)}_LINKER";
+                      ccVar = "CC_${builtins.replaceStrings [ "-" ] [ "_" ] target}";
+                      cxxVar = "CXX_${builtins.replaceStrings [ "-" ] [ "_" ] target}";
+                      arVar = "AR_${builtins.replaceStrings [ "-" ] [ "_" ] target}";
+                      rustflagsVar = "CARGO_TARGET_${
+                        builtins.replaceStrings [ "-" ] [ "_" ] (lib.toUpper target)
+                      }_RUSTFLAGS";
+                    in
+                    {
+                      "CARGO_BUILD_TARGET" = target;
+                      # point to our wrappers
+                      "${cargoVar}" = "${zigWrappers}/bin/zig-cc";
+                      "${ccVar}" = "${zigWrappers}/bin/zig-cc";
+                      "${cxxVar}" = "${zigWrappers}/bin/zig-cxx";
+                      "${arVar}" = "${zigWrappers}/bin/zig-ar";
+                    }
+                    // lib.optionalAttrs (lib.strings.hasInfix "musl" target) {
+                      # add --target flag to rustflags
+                      # prevent rust from linking its own crt if using musl-like targets
+                      "${rustflagsVar}" = "-C link-self-contained=no";
+                    }
+                    // lib.optionalAttrs (lib.strings.hasInfix "freebsd" target) {
+                      "${rustflagsVar}" = "-C link-arg=-L${freebsdLibs}";
+                    };
 
-                   shellHook = ''
-                     echo "Cross-compilation shell for target: ${target} (via zig cc)"
-                   '';
-                 };
-               }
-             )
-             (
-               builtins.filter (
-                 t: t != hostTriple && (builtins.length (lib.strings.split "-" t) > 4)
-               ) supportedTargets
-             );
+                  shellHook = ''
+                    echo "Cross-compilation shell for target: ${target} (via zig cc)"
+                  '';
+                };
+              }
+            )
+            (
+              builtins.filter (
+                t: t != hostTriple && (builtins.length (lib.strings.split "-" t) > 4)
+              ) supportedTargets
+            );
+
+        inherit (self.checks.${system}.pre-commit-check) shellHook enabledPackages;
 
         defaultShell = pkgs.mkShell {
+          inherit shellHook;
+          buildInputs = enabledPackages;
           packages = [
             rustDefault
             pkgs.tailwindcss_4
@@ -199,14 +214,35 @@
 
       in
       {
+        checks = {
+          pre-commit-check = git-hooks.lib.${system}.run {
+            src = ./.;
+            hooks = {
+              actionlint.enable = true;
+              clippy = {
+                enable = true;
+                packageOverrides = {
+                  inherit (fx.stable) cargo clippy;
+                };
+              };
+              nixfmt = {
+                enable = true;
+                package = pkgs.nixfmt;
+              };
+              rustfmt = {
+                enable = true;
+                packageOverrides = { inherit (fx.stable) cargo rustfmt; };
+              };
+            };
+            package = pkgs.prek;
+          };
+        };
+
         # expose all cross shells as attributes under devShells
-        devShells = builtins.foldl' (acc: x: acc // x)
-          {
-            default = defaultShell;
-          }
-          crossShells;
+        devShells = builtins.foldl' (acc: x: acc // x) {
+          default = defaultShell;
+        } crossShells;
 
       }
     );
 }
-
