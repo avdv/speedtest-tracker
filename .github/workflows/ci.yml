@@ -75,3 +75,52 @@ jobs:
 
       - name: Run Tests
         run: nix develop -c cargo test
+
+  build:
+    name: Build binary (${{ matrix.target }})
+    needs: lint
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - "aarch64-unknown-linux-musl"
+          - "aarch64-apple-darwin"
+          - "armv7-unknown-linux-musleabihf"
+          - "x86_64-apple-darwin"
+          - "x86_64-unknown-freebsd"
+          - "x86_64-unknown-linux-musl"
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+      - uses: DeterminateSystems/magic-nix-cache-action@908b263ff629f4cc17666315b7fd3ec127c6244d # v14
+        with:
+          use-flake-hub: false
+
+      - name: Set up cargo cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Build release binary
+        run: nix develop .#cross-${{ matrix.target }} -c cargo build --release
+ 
+      - name: Upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "binary-${{ matrix.target }}"
+          path: |
+            target/${{ matrix.target }}/release/speedtest-tracker
+            target/${{ matrix.target }}/release/create-test-user
+        
