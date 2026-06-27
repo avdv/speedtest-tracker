@@ -86,6 +86,10 @@ struct OoklaResultInfo {
     persisted: bool,
 }
 
+// The function uses std::process::Command (blocking). The async signature is
+// intentional — callers treat it as async and it should be migrated to
+// tokio::process::Command in the future.
+#[allow(clippy::unused_async)]
 pub async fn run_speedtest(server_id: Option<i64>) -> Result<SpeedtestResult, String> {
     tracing::info!(
         "Starting speedtest{}",

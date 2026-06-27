@@ -11,11 +11,11 @@ pub struct AppError(StatusCode, anyhow::Error);
 
 impl AppError {
     pub fn not_found(msg: impl std::fmt::Display) -> Self {
-        AppError(StatusCode::NOT_FOUND, anyhow::anyhow!("{}", msg))
+        AppError(StatusCode::NOT_FOUND, anyhow::anyhow!("{msg}"))
     }
 
     pub fn bad_request(msg: impl std::fmt::Display) -> Self {
-        AppError(StatusCode::BAD_REQUEST, anyhow::anyhow!("{}", msg))
+        AppError(StatusCode::BAD_REQUEST, anyhow::anyhow!("{msg}"))
     }
 }
 

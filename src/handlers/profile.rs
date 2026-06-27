@@ -24,9 +24,8 @@ pub async fn profile_page(
     session: tower_sessions::Session,
 ) -> Result<Response, AppError> {
     // Get logged-in user from session
-    let user_id = match crate::session::get_user_id(session).await {
-        Some(id) => id,
-        None => return Ok(Redirect::to("/login").into_response()),
+    let Some(user_id) = crate::session::get_user_id(session).await else {
+        return Ok(Redirect::to("/login").into_response());
     };
 
     let user = match &state.db {
