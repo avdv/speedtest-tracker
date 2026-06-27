@@ -1,13 +1,6 @@
 // Utility to create a test user in the database
 // Only compiled when sqlite feature is enabled
 #![cfg(feature = "sqlite")]
-#![warn(
-    clippy::uninlined_format_args,
-    clippy::unreadable_literal,
-    clippy::unused_async,
-    clippy::manual_let_else,
-    clippy::match_same_arms,
-)]
 
 use std::env;
 
