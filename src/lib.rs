@@ -3,6 +3,7 @@ pub mod api;
 pub mod auth;
 pub mod db;
 pub mod embedded_assets;
+pub mod error;
 pub mod filters;
 pub mod handlers;
 pub mod i18n;

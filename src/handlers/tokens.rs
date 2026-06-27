@@ -1,9 +1,10 @@
+use crate::error::{AppError, HtmlTemplate};
 use crate::locale_middleware::Locale;
 use crate::{db::Database, filters, models::PersonalAccessToken, AppState};
 use askama::Template;
 use axum::{
     extract::{Query, State},
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{IntoResponse, Redirect, Response},
     Form,
 };
 use rand::RngExt;
@@ -24,7 +25,7 @@ pub async fn api_tokens_page(
     State(state): State<AppState>,
     locale: Locale,
     Query(params): Query<std::collections::HashMap<String, String>>,
-) -> Response {
+) -> Result<impl IntoResponse, AppError> {
     let message = if params.contains_key("deleted") {
         Some("Token deleted successfully!".to_string())
     } else if params.contains_key("error") {
@@ -38,26 +39,29 @@ pub async fn api_tokens_page(
 
     let tokens = match &state.db {
         #[cfg(feature = "sqlite")]
-        Database::Sqlite(pool) => sqlx::query_as::<_, PersonalAccessToken>(
-            "SELECT * FROM personal_access_tokens ORDER BY created_at DESC",
-        )
-        .fetch_all(pool)
-        .await
-        .unwrap_or_default(),
+        Database::Sqlite(pool) => {
+            sqlx::query_as::<_, PersonalAccessToken>(
+                "SELECT * FROM personal_access_tokens ORDER BY created_at DESC",
+            )
+            .fetch_all(pool)
+            .await?
+        }
         #[cfg(feature = "mysql")]
-        Database::MySql(pool) => sqlx::query_as::<_, PersonalAccessToken>(
-            "SELECT * FROM personal_access_tokens ORDER BY created_at DESC",
-        )
-        .fetch_all(pool)
-        .await
-        .unwrap_or_default(),
+        Database::MySql(pool) => {
+            sqlx::query_as::<_, PersonalAccessToken>(
+                "SELECT * FROM personal_access_tokens ORDER BY created_at DESC",
+            )
+            .fetch_all(pool)
+            .await?
+        }
         #[cfg(feature = "postgres")]
-        Database::Postgres(pool) => sqlx::query_as::<_, PersonalAccessToken>(
-            "SELECT * FROM personal_access_tokens ORDER BY created_at DESC",
-        )
-        .fetch_all(pool)
-        .await
-        .unwrap_or_default(),
+        Database::Postgres(pool) => {
+            sqlx::query_as::<_, PersonalAccessToken>(
+                "SELECT * FROM personal_access_tokens ORDER BY created_at DESC",
+            )
+            .fetch_all(pool)
+            .await?
+        }
     };
 
     let template = ApiTokensTemplate {
@@ -69,17 +73,13 @@ pub async fn api_tokens_page(
         is_authenticated: true,
     };
 
-    match template.render() {
-        Ok(html) => Html(html).into_response(),
-        Err(err) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            err.to_string(),
-        )
-            .into_response(),
-    }
+    Ok(HtmlTemplate(template))
 }
 
-pub async fn create_token(State(state): State<AppState>, body: String) -> Response {
+pub async fn create_token(
+    State(state): State<AppState>,
+    body: String,
+) -> Result<impl IntoResponse, AppError> {
     use sha2::{Digest, Sha256};
 
     // Parse form manually to handle duplicate keys
@@ -126,8 +126,7 @@ pub async fn create_token(State(state): State<AppState>, body: String) -> Respon
             let user_id: i64 =
                 sqlx::query_scalar("SELECT id FROM users WHERE role = 'admin' LIMIT 1")
                     .fetch_one(pool)
-                    .await
-                    .unwrap_or(1);
+                    .await?;
 
             let result = sqlx::query(
                 "INSERT INTO personal_access_tokens 
@@ -149,8 +148,7 @@ pub async fn create_token(State(state): State<AppState>, body: String) -> Respon
             let user_id: i64 =
                 sqlx::query_scalar("SELECT id FROM users WHERE role = 'admin' LIMIT 1")
                     .fetch_one(pool)
-                    .await
-                    .unwrap_or(1);
+                    .await?;
 
             let result = sqlx::query(
                 "INSERT INTO personal_access_tokens 
@@ -172,8 +170,7 @@ pub async fn create_token(State(state): State<AppState>, body: String) -> Respon
             let user_id: i64 =
                 sqlx::query_scalar("SELECT id FROM users WHERE role = 'admin' LIMIT 1")
                     .fetch_one(pool)
-                    .await
-                    .unwrap_or(1);
+                    .await?;
 
             let result = sqlx::query(
                 "INSERT INTO personal_access_tokens 
@@ -189,7 +186,7 @@ pub async fn create_token(State(state): State<AppState>, body: String) -> Respon
             .await;
             result.is_ok()
         }
-        _ => return Redirect::to("/admin/api-tokens").into_response(),
+        _ => return Ok(Redirect::to("/admin/api-tokens")),
     };
 
     if success {
@@ -199,9 +196,9 @@ pub async fn create_token(State(state): State<AppState>, body: String) -> Respon
             urlencoding::encode(&token),
             urlencoding::encode(&name)
         );
-        Redirect::to(&redirect_url).into_response()
+        Ok(Redirect::to(&redirect_url))
     } else {
-        Redirect::to("/admin/api-tokens?error=1").into_response()
+        Ok(Redirect::to("/admin/api-tokens?error=1"))
     }
 }
 
@@ -213,7 +210,7 @@ pub struct DeleteTokenForm {
 pub async fn delete_token(
     State(state): State<AppState>,
     Form(form): Form<DeleteTokenForm>,
-) -> Response {
+) -> Result<impl IntoResponse, AppError> {
     let success = match &state.db {
         #[cfg(feature = "sqlite")]
         Database::Sqlite(pool) => sqlx::query("DELETE FROM personal_access_tokens WHERE id = ?")
@@ -236,9 +233,9 @@ pub async fn delete_token(
     };
 
     if success {
-        Redirect::to("/admin/api-tokens?deleted=1").into_response()
+        Ok(Redirect::to("/admin/api-tokens?deleted=1"))
     } else {
-        Redirect::to("/admin/api-tokens?error=1").into_response()
+        Ok(Redirect::to("/admin/api-tokens?error=1"))
     }
 }
 
@@ -255,7 +252,7 @@ pub async fn edit_token_page(
     State(state): State<AppState>,
     locale: Locale,
     axum::extract::Path(token_id): axum::extract::Path<i64>,
-) -> Response {
+) -> Result<Response, AppError> {
     let token = match &state.db {
         #[cfg(feature = "sqlite")]
         Database::Sqlite(pool) => {
@@ -264,7 +261,7 @@ pub async fn edit_token_page(
             )
             .bind(token_id)
             .fetch_optional(pool)
-            .await
+            .await?
         }
         #[cfg(feature = "mysql")]
         Database::MySql(pool) => {
@@ -273,7 +270,7 @@ pub async fn edit_token_page(
             )
             .bind(token_id)
             .fetch_optional(pool)
-            .await
+            .await?
         }
         #[cfg(feature = "postgres")]
         Database::Postgres(pool) => {
@@ -282,32 +279,28 @@ pub async fn edit_token_page(
             )
             .bind(token_id)
             .fetch_optional(pool)
-            .await
+            .await?
         }
     };
 
     match token {
-        Ok(Some(token)) => {
+        Some(token) => {
             let template = EditTokenTemplate {
                 locale: locale.0,
                 token,
                 error: None,
                 is_authenticated: true,
             };
-            match template.render() {
-                Ok(html) => Html(html).into_response(),
-                Err(err) => (
-                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                    err.to_string(),
-                )
-                    .into_response(),
-            }
+            Ok(HtmlTemplate(template).into_response())
         }
-        _ => Redirect::to("/admin/api-tokens").into_response(),
+        None => Ok(Redirect::to("/admin/api-tokens").into_response()),
     }
 }
 
-pub async fn update_token(State(state): State<AppState>, body: String) -> Response {
+pub async fn update_token(
+    State(state): State<AppState>,
+    body: String,
+) -> Result<impl IntoResponse, AppError> {
     let mut token_id: Option<i64> = None;
     let mut name = String::new();
     let mut abilities: Vec<String> = Vec::new();
@@ -329,7 +322,7 @@ pub async fn update_token(State(state): State<AppState>, body: String) -> Respon
     }
 
     let Some(id) = token_id else {
-        return Redirect::to("/admin/api-tokens?error=1").into_response();
+        return Ok(Redirect::to("/admin/api-tokens?error=1"));
     };
 
     let abilities_json = serde_json::to_string(&abilities).unwrap_or_else(|_| "[]".to_string());
@@ -374,8 +367,8 @@ pub async fn update_token(State(state): State<AppState>, body: String) -> Respon
     };
 
     if success {
-        Redirect::to("/admin/api-tokens?updated=1").into_response()
+        Ok(Redirect::to("/admin/api-tokens?updated=1"))
     } else {
-        Redirect::to("/admin/api-tokens?error=1").into_response()
+        Ok(Redirect::to("/admin/api-tokens?error=1"))
     }
 }

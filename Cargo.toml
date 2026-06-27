@@ -20,6 +20,7 @@ mysql = ["sqlx/mysql", "tower-sessions-sqlx-store/mysql"]
 postgres = ["sqlx/postgres", "tower-sessions-sqlx-store/postgres"]
 
 [dependencies]
+anyhow = "1"
 tokio = { version = "1", features = ["full"] }
 axum = { version = "0.8", features = ["macros"] }
 axum-extra = { version = "0.12", features = ["typed-header", "cookie", "cookie-private"] }
