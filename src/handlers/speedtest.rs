@@ -48,14 +48,14 @@ pub async fn run_test_execute(
         .await
         .map_err(|e| {
             tracing::error!("Speedtest execution failed: {}", e);
-            AppError::from(anyhow::anyhow!("{}", e))
+            AppError::from(anyhow::anyhow!("{e}"))
         })?;
 
     let result_id = crate::speedtest::save_result(&state.db, result, false)
         .await
         .map_err(|e| {
             tracing::error!("Failed to save speedtest result: {}", e);
-            AppError::from(anyhow::anyhow!("Test completed but failed to save: {}", e))
+            AppError::from(anyhow::anyhow!("Test completed but failed to save: {e}"))
         })?;
 
     let saved_result = match &state.db {

@@ -1,4 +1,11 @@
 // Library exports for testing
+#![warn(
+    clippy::uninlined_format_args,
+    clippy::unreadable_literal,
+    clippy::unused_async,
+    clippy::manual_let_else,
+    clippy::match_same_arms,
+)]
 pub mod api;
 pub mod auth;
 pub mod db;

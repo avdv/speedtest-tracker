@@ -7,17 +7,11 @@ pub fn normalize_locale(lang: &str) -> String {
     let normalized = lang.replace('_', "-").to_lowercase();
 
     match normalized.as_str() {
-        "en" | "en-us" | "en-gb" | "en-ca" | "en-au" => "en".to_string(),
-        "de" | "de-de" | "de-at" | "de-ch" => "de_DE".to_string(),
-        "es" | "es-es" | "es-mx" | "es-ar" => "es_ES".to_string(),
-        "fr" | "fr-fr" | "fr-ca" | "fr-be" => "fr_FR".to_string(),
-        "nl" | "nl-nl" | "nl-be" => "nl_NL".to_string(),
+        "de" | "de-de" | "de-at" | "de-ch" | "de_de" => "de_DE".to_string(),
+        "es" | "es-es" | "es-mx" | "es-ar" | "es_es" => "es_ES".to_string(),
+        "fr" | "fr-fr" | "fr-ca" | "fr-be" | "fr_fr" => "fr_FR".to_string(),
+        "nl" | "nl-nl" | "nl-be" | "nl_nl" => "nl_NL".to_string(),
         "pt-br" | "pt_br" => "pt_BR".to_string(),
-        // If already in our format, check if valid and return as-is
-        "de_de" => "de_DE".to_string(),
-        "es_es" => "es_ES".to_string(),
-        "fr_fr" => "fr_FR".to_string(),
-        "nl_nl" => "nl_NL".to_string(),
         _ => "en".to_string(),
     }
 }

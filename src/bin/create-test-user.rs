@@ -1,6 +1,13 @@
 // Utility to create a test user in the database
 // Only compiled when sqlite feature is enabled
 #![cfg(feature = "sqlite")]
+#![warn(
+    clippy::uninlined_format_args,
+    clippy::unreadable_literal,
+    clippy::unused_async,
+    clippy::manual_let_else,
+    clippy::match_same_arms,
+)]
 
 use std::env;
 
@@ -96,8 +103,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )
             .bind("ookla")
             .bind(15.2)
-            .bind(95000000_i64)
-            .bind(45000000_i64)
+            .bind(95_000_000_i64)
+            .bind(45_000_000_i64)
             .bind("completed")
             .bind(true)
             .bind("-1 hour")
@@ -111,8 +118,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )
             .bind("ookla")
             .bind(14.8)
-            .bind(98000000_i64)
-            .bind(47000000_i64)
+            .bind(98_000_000_i64)
+            .bind(47_000_000_i64)
             .bind("completed")
             .bind(true)
             .bind("-2 hours")
@@ -126,8 +133,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )
             .bind("ookla")
             .bind(16.1)
-            .bind(92000000_i64)
-            .bind(43000000_i64)
+            .bind(92_000_000_i64)
+            .bind(43_000_000_i64)
             .bind("completed")
             .bind(false)
             .bind("-3 hours")
