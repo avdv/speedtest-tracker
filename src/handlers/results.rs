@@ -1,9 +1,10 @@
+use crate::error::{AppError, HtmlTemplate};
 use crate::locale_middleware::Locale;
 use crate::{db::Database, filters, models::Result as SpeedTestResult, AppState};
 use askama::Template;
 use axum::{
     extract::{Query, State},
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{IntoResponse, Redirect},
     Form,
 };
 use serde::Deserialize;
@@ -39,26 +40,29 @@ pub async fn results_list(
     State(state): State<AppState>,
     locale: Locale,
     Query(params): Query<Pagination>,
-) -> Response {
+) -> Result<impl IntoResponse, AppError> {
     let offset = (params.page - 1) * params.per_page;
 
     // Get total count
     let total_results: i64 = match &state.db {
         #[cfg(feature = "sqlite")]
-        Database::Sqlite(pool) => sqlx::query_scalar("SELECT COUNT(*) FROM results")
-            .fetch_one(pool)
-            .await
-            .unwrap_or(0),
+        Database::Sqlite(pool) => {
+            sqlx::query_scalar("SELECT COUNT(*) FROM results")
+                .fetch_one(pool)
+                .await?
+        }
         #[cfg(feature = "mysql")]
-        Database::MySql(pool) => sqlx::query_scalar("SELECT COUNT(*) FROM results")
-            .fetch_one(pool)
-            .await
-            .unwrap_or(0),
+        Database::MySql(pool) => {
+            sqlx::query_scalar("SELECT COUNT(*) FROM results")
+                .fetch_one(pool)
+                .await?
+        }
         #[cfg(feature = "postgres")]
-        Database::Postgres(pool) => sqlx::query_scalar("SELECT COUNT(*) FROM results")
-            .fetch_one(pool)
-            .await
-            .unwrap_or(0),
+        Database::Postgres(pool) => {
+            sqlx::query_scalar("SELECT COUNT(*) FROM results")
+                .fetch_one(pool)
+                .await?
+        }
     };
 
     let total_pages = if total_results > 0 {
@@ -69,44 +73,38 @@ pub async fn results_list(
 
     let results = match &state.db {
         #[cfg(feature = "sqlite")]
-        Database::Sqlite(pool) => sqlx::query_as::<_, SpeedTestResult>(
-            "SELECT * FROM results ORDER BY created_at DESC LIMIT ? OFFSET ?",
-        )
-        .bind(params.per_page)
-        .bind(offset)
-        .fetch_all(pool)
-        .await
-        .unwrap_or_else(|e| {
-            tracing::error!("Failed to fetch results: {}", e);
-            Vec::new()
-        }),
+        Database::Sqlite(pool) => {
+            sqlx::query_as::<_, SpeedTestResult>(
+                "SELECT * FROM results ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            )
+            .bind(params.per_page)
+            .bind(offset)
+            .fetch_all(pool)
+            .await?
+        }
         #[cfg(feature = "mysql")]
-        Database::MySql(pool) => sqlx::query_as::<_, SpeedTestResult>(
-            "SELECT * FROM results ORDER BY created_at DESC LIMIT ? OFFSET ?",
-        )
-        .bind(params.per_page)
-        .bind(offset)
-        .fetch_all(pool)
-        .await
-        .unwrap_or_else(|e| {
-            tracing::error!("Failed to fetch results: {}", e);
-            Vec::new()
-        }),
+        Database::MySql(pool) => {
+            sqlx::query_as::<_, SpeedTestResult>(
+                "SELECT * FROM results ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            )
+            .bind(params.per_page)
+            .bind(offset)
+            .fetch_all(pool)
+            .await?
+        }
         #[cfg(feature = "postgres")]
-        Database::Postgres(pool) => sqlx::query_as::<_, SpeedTestResult>(
-            "SELECT * FROM results ORDER BY created_at DESC LIMIT $1 OFFSET $2",
-        )
-        .bind(params.per_page)
-        .bind(offset)
-        .fetch_all(pool)
-        .await
-        .unwrap_or_else(|e| {
-            tracing::error!("Failed to fetch results: {}", e);
-            Vec::new()
-        }),
+        Database::Postgres(pool) => {
+            sqlx::query_as::<_, SpeedTestResult>(
+                "SELECT * FROM results ORDER BY created_at DESC LIMIT $1 OFFSET $2",
+            )
+            .bind(params.per_page)
+            .bind(offset)
+            .fetch_all(pool)
+            .await?
+        }
     };
 
-    let template = ResultsListTemplate {
+    Ok(HtmlTemplate(ResultsListTemplate {
         locale: locale.0,
         results,
         page: params.page,
@@ -114,16 +112,7 @@ pub async fn results_list(
         total_results,
         total_pages,
         is_authenticated: true,
-    };
-
-    match template.render() {
-        Ok(html) => Html(html).into_response(),
-        Err(err) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            err.to_string(),
-        )
-            .into_response(),
-    }
+    }))
 }
 
 #[derive(Deserialize)]
@@ -134,7 +123,7 @@ pub struct DeleteResultsForm {
 pub async fn delete_results(
     State(state): State<AppState>,
     Form(form): Form<DeleteResultsForm>,
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse, AppError> {
     let ids: Vec<i64> = form
         .ids
         .split(',')
@@ -142,38 +131,38 @@ pub async fn delete_results(
         .collect();
 
     if ids.is_empty() {
-        return Redirect::to("/admin/results");
+        return Ok(Redirect::to("/admin/results"));
     }
 
     match &state.db {
         #[cfg(feature = "sqlite")]
         Database::Sqlite(pool) => {
             for id in ids {
-                let _ = sqlx::query("DELETE FROM results WHERE id = ?")
+                sqlx::query("DELETE FROM results WHERE id = ?")
                     .bind(id)
                     .execute(pool)
-                    .await;
+                    .await?;
             }
         }
         #[cfg(feature = "mysql")]
         Database::MySql(pool) => {
             for id in ids {
-                let _ = sqlx::query("DELETE FROM results WHERE id = ?")
+                sqlx::query("DELETE FROM results WHERE id = ?")
                     .bind(id)
                     .execute(pool)
-                    .await;
+                    .await?;
             }
         }
         #[cfg(feature = "postgres")]
         Database::Postgres(pool) => {
             for id in ids {
-                let _ = sqlx::query("DELETE FROM results WHERE id = $1")
+                sqlx::query("DELETE FROM results WHERE id = $1")
                     .bind(id)
                     .execute(pool)
-                    .await;
+                    .await?;
             }
         }
     }
 
-    Redirect::to("/admin/results")
+    Ok(Redirect::to("/admin/results"))
 }

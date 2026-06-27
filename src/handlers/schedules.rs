@@ -1,9 +1,10 @@
+use crate::error::{AppError, HtmlTemplate};
 use crate::locale_middleware::Locale;
 use crate::{db::Database, filters, models::Schedule, AppState};
 use askama::Template;
 use axum::{
     extract::{Query, State},
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{IntoResponse, Redirect},
     Form,
 };
 use serde::Deserialize;
@@ -22,7 +23,7 @@ pub async fn schedules_page(
     State(state): State<AppState>,
     locale: Locale,
     Query(params): Query<std::collections::HashMap<String, String>>,
-) -> Response {
+) -> Result<impl IntoResponse, AppError> {
     let message = if params.contains_key("created") {
         Some("Schedule created successfully!".to_string())
     } else if params.contains_key("updated") {
@@ -40,22 +41,19 @@ pub async fn schedules_page(
         Database::Sqlite(pool) => {
             sqlx::query_as::<_, Schedule>("SELECT * FROM schedules ORDER BY created_at DESC")
                 .fetch_all(pool)
-                .await
-                .unwrap_or_default()
+                .await?
         }
         #[cfg(feature = "mysql")]
         Database::MySql(pool) => {
             sqlx::query_as::<_, Schedule>("SELECT * FROM schedules ORDER BY created_at DESC")
                 .fetch_all(pool)
-                .await
-                .unwrap_or_default()
+                .await?
         }
         #[cfg(feature = "postgres")]
         Database::Postgres(pool) => {
             sqlx::query_as::<_, Schedule>("SELECT * FROM schedules ORDER BY created_at DESC")
                 .fetch_all(pool)
-                .await
-                .unwrap_or_default()
+                .await?
         }
     };
 
@@ -69,14 +67,7 @@ pub async fn schedules_page(
         is_authenticated: true,
     };
 
-    match template.render() {
-        Ok(html) => Html(html).into_response(),
-        Err(err) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            err.to_string(),
-        )
-            .into_response(),
-    }
+    Ok(HtmlTemplate(template))
 }
 
 #[derive(Deserialize)]
@@ -90,7 +81,7 @@ pub struct CreateScheduleForm {
 pub async fn create_schedule(
     State(state): State<AppState>,
     Form(form): Form<CreateScheduleForm>,
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse, AppError> {
     let enabled = form.enabled.is_some();
     let server_ids = form.server_ids.filter(|s| !s.trim().is_empty());
 
@@ -134,9 +125,9 @@ pub async fn create_schedule(
     };
 
     if success {
-        Redirect::to("/admin/schedules?created=1")
+        Ok(Redirect::to("/admin/schedules?created=1"))
     } else {
-        Redirect::to("/admin/schedules?error=1")
+        Ok(Redirect::to("/admin/schedules?error=1"))
     }
 }
 
@@ -148,7 +139,7 @@ pub struct DeleteScheduleForm {
 pub async fn delete_schedule(
     State(state): State<AppState>,
     Form(form): Form<DeleteScheduleForm>,
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse, AppError> {
     let success = match &state.db {
         #[cfg(feature = "sqlite")]
         Database::Sqlite(pool) => sqlx::query("DELETE FROM schedules WHERE id = ?")
@@ -171,9 +162,9 @@ pub async fn delete_schedule(
     };
 
     if success {
-        Redirect::to("/admin/schedules?deleted=1")
+        Ok(Redirect::to("/admin/schedules?deleted=1"))
     } else {
-        Redirect::to("/admin/schedules?error=1")
+        Ok(Redirect::to("/admin/schedules?error=1"))
     }
 }
 
@@ -185,7 +176,7 @@ pub struct ToggleScheduleForm {
 pub async fn toggle_schedule(
     State(state): State<AppState>,
     Form(form): Form<ToggleScheduleForm>,
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse, AppError> {
     let success = match &state.db {
         #[cfg(feature = "sqlite")]
         Database::Sqlite(pool) => sqlx::query(
@@ -214,8 +205,8 @@ pub async fn toggle_schedule(
     };
 
     if success {
-        Redirect::to("/admin/schedules?updated=1")
+        Ok(Redirect::to("/admin/schedules?updated=1"))
     } else {
-        Redirect::to("/admin/schedules?error=1")
+        Ok(Redirect::to("/admin/schedules?error=1"))
     }
 }

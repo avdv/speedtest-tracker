@@ -1,9 +1,10 @@
+use crate::error::{AppError, HtmlTemplate};
 use crate::locale_middleware::Locale;
 use crate::{db::Database, filters, AppState};
 use askama::Template;
 use axum::{
     extract::State,
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{IntoResponse, Redirect, Response},
     Form,
 };
 use serde::Deserialize;
@@ -15,19 +16,11 @@ pub struct LoginTemplate {
     error: Option<String>,
 }
 
-pub async fn login_page(locale: Locale) -> Response {
-    let template = LoginTemplate {
+pub async fn login_page(locale: Locale) -> impl IntoResponse {
+    HtmlTemplate(LoginTemplate {
         locale: locale.0,
         error: None,
-    };
-    match template.render() {
-        Ok(html) => Html(html).into_response(),
-        Err(err) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            err.to_string(),
-        )
-            .into_response(),
-    }
+    })
 }
 
 #[derive(Deserialize)]
@@ -41,7 +34,7 @@ pub async fn login_post(
     session: tower_sessions::Session,
     locale: Locale,
     Form(form): Form<LoginForm>,
-) -> Response {
+) -> Result<Response, AppError> {
     tracing::debug!("Login attempt for email: {}", form.email);
 
     let user = match &state.db {
@@ -54,9 +47,7 @@ pub async fn login_post(
                 .map_err(|e| {
                     tracing::error!("Database query error during login: {}", e);
                     e
-                })
-                .ok()
-                .flatten()
+                })?
         }
         #[cfg(feature = "mysql")]
         Database::MySql(pool) => {
@@ -67,9 +58,7 @@ pub async fn login_post(
                 .map_err(|e| {
                     tracing::error!("Database query error during login: {}", e);
                     e
-                })
-                .ok()
-                .flatten()
+                })?
         }
         #[cfg(feature = "postgres")]
         Database::Postgres(pool) => {
@@ -80,9 +69,7 @@ pub async fn login_post(
                 .map_err(|e| {
                     tracing::error!("Database query error during login: {}", e);
                     e
-                })
-                .ok()
-                .flatten()
+                })?
         }
     };
 
@@ -103,18 +90,11 @@ pub async fn login_post(
 
                 if let Err(e) = crate::session::set_user_session(session, user.id).await {
                     tracing::error!("Failed to set session: {}", e);
-                    let template = LoginTemplate {
-                        locale: locale.0.clone(),
+                    return Ok(HtmlTemplate(LoginTemplate {
+                        locale: locale.0,
                         error: Some(format!("Login failed - session error: {e}")),
-                    };
-                    return match template.render() {
-                        Ok(html) => Html(html).into_response(),
-                        Err(err) => (
-                            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                            err.to_string(),
-                        )
-                            .into_response(),
-                    };
+                    })
+                    .into_response());
                 }
 
                 tracing::info!(
@@ -122,7 +102,7 @@ pub async fn login_post(
                     user.email,
                     redirect_url
                 );
-                return Redirect::to(&redirect_url).into_response();
+                return Ok(Redirect::to(&redirect_url).into_response());
             }
             Ok(false) => {
                 tracing::debug!("Password verification failed");
@@ -135,23 +115,16 @@ pub async fn login_post(
         tracing::debug!("User not found");
     }
 
-    let template = LoginTemplate {
+    Ok(HtmlTemplate(LoginTemplate {
         locale: locale.0,
         error: Some("Invalid credentials".to_string()),
-    };
-    match template.render() {
-        Ok(html) => Html(html).into_response(),
-        Err(err) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            err.to_string(),
-        )
-            .into_response(),
-    }
+    })
+    .into_response())
 }
 
-pub async fn logout(session: tower_sessions::Session) -> Response {
+pub async fn logout(session: tower_sessions::Session) -> impl IntoResponse {
     if let Err(e) = crate::session::clear_session(session).await {
         tracing::error!("Failed to clear session: {}", e);
     }
-    Redirect::to("/").into_response()
+    Redirect::to("/")
 }

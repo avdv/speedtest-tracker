@@ -1,9 +1,10 @@
+use crate::error::{AppError, HtmlTemplate};
 use crate::locale_middleware::Locale;
 use crate::{db::Database, filters, AppState};
 use askama::Template;
 use axum::{
     extract::State,
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{IntoResponse, Redirect, Response},
     Form,
 };
 use serde::Deserialize;
@@ -21,11 +22,11 @@ pub async fn profile_page(
     State(state): State<AppState>,
     locale: Locale,
     session: tower_sessions::Session,
-) -> Response {
+) -> Result<Response, AppError> {
     // Get logged-in user from session
     let user_id = match crate::session::get_user_id(session).await {
         Some(id) => id,
-        None => return Redirect::to("/login").into_response(),
+        None => return Ok(Redirect::to("/login").into_response()),
     };
 
     let user = match &state.db {
@@ -34,42 +35,35 @@ pub async fn profile_page(
             sqlx::query_as::<_, crate::models::User>("SELECT * FROM users WHERE id = ?")
                 .bind(user_id)
                 .fetch_optional(pool)
-                .await
+                .await?
         }
         #[cfg(feature = "mysql")]
         Database::MySql(pool) => {
             sqlx::query_as::<_, crate::models::User>("SELECT * FROM users WHERE id = ?")
                 .bind(user_id)
                 .fetch_optional(pool)
-                .await
+                .await?
         }
         #[cfg(feature = "postgres")]
         Database::Postgres(pool) => {
             sqlx::query_as::<_, crate::models::User>("SELECT * FROM users WHERE id = $1")
                 .bind(user_id)
                 .fetch_optional(pool)
-                .await
+                .await?
         }
     };
 
     match user {
-        Ok(Some(user)) => {
+        Some(user) => {
             let template = ProfileTemplate {
                 locale: locale.0,
                 user,
                 message: None,
                 is_authenticated: true,
             };
-            match template.render() {
-                Ok(html) => Html(html).into_response(),
-                Err(err) => (
-                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                    err.to_string(),
-                )
-                    .into_response(),
-            }
+            Ok(HtmlTemplate(template).into_response())
         }
-        _ => Redirect::to("/login").into_response(),
+        None => Ok(Redirect::to("/login").into_response()),
     }
 }
 
@@ -83,7 +77,7 @@ pub struct ProfileForm {
 pub async fn profile_update(
     State(state): State<AppState>,
     Form(form): Form<ProfileForm>,
-) -> Response {
+) -> Result<impl IntoResponse, AppError> {
     // TODO: Get actual user ID from session
     // For now, update first admin user
 
@@ -197,12 +191,12 @@ pub async fn profile_update(
             };
             result.is_ok()
         }
-        _ => return Redirect::to("/admin/profile").into_response(),
+        _ => return Ok(Redirect::to("/admin/profile")),
     };
 
     if success {
-        Redirect::to("/admin/profile?updated=1").into_response()
+        Ok(Redirect::to("/admin/profile?updated=1"))
     } else {
-        Redirect::to("/admin/profile?error=1").into_response()
+        Ok(Redirect::to("/admin/profile?error=1"))
     }
 }

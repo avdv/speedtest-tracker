@@ -1,9 +1,10 @@
+use crate::error::{AppError, HtmlTemplate};
 use crate::locale_middleware::Locale;
 use crate::{db::Database, filters, models::Result as SpeedTestResult, AppState};
 use askama::Template;
 use axum::{
     extract::{Query, State},
-    response::{Html, IntoResponse, Response},
+    response::IntoResponse,
 };
 use chrono::{NaiveDateTime, Utc};
 use serde::Deserialize;
@@ -82,7 +83,7 @@ pub async fn home_dashboard(
     locale: Locale,
     session: tower_sessions::Session,
     Query(params): Query<TimeRangeQuery>,
-) -> Response {
+) -> Result<impl IntoResponse, AppError> {
     let hours_ago = match params.range.as_str() {
         "week" => 24 * 7,
         "month" => 24 * 30,
@@ -99,8 +100,7 @@ pub async fn home_dashboard(
                 "SELECT * FROM results ORDER BY created_at DESC LIMIT 5",
             )
             .fetch_all(pool)
-            .await
-            .unwrap_or_default();
+            .await?;
 
             let chart_results: Vec<SpeedTestResult> = sqlx::query_as(
                 "SELECT * FROM results WHERE created_at >= ? AND status = ? ORDER BY created_at ASC"
@@ -108,8 +108,7 @@ pub async fn home_dashboard(
             .bind(time_cutoff)
             .bind("completed")
             .fetch_all(pool)
-            .await
-            .unwrap_or_default();
+            .await?;
 
             let total: i64 = sqlx::query_scalar(
                 "SELECT COUNT(*) FROM results WHERE created_at >= ? AND status = ?",
@@ -117,8 +116,7 @@ pub async fn home_dashboard(
             .bind(time_cutoff)
             .bind("completed")
             .fetch_one(pool)
-            .await
-            .unwrap_or(0);
+            .await?;
 
             let avg_download: Option<f64> = sqlx::query_scalar(
                 "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= ? AND status = ?"
@@ -126,8 +124,7 @@ pub async fn home_dashboard(
             .bind(time_cutoff)
             .bind("completed")
             .fetch_one(pool)
-            .await
-            .ok();
+            .await?;
 
             let avg_upload: Option<f64> = sqlx::query_scalar(
                 "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= ? AND status = ?"
@@ -135,8 +132,7 @@ pub async fn home_dashboard(
             .bind(time_cutoff)
             .bind("completed")
             .fetch_one(pool)
-            .await
-            .ok();
+            .await?;
 
             let avg_ping: Option<f64> = sqlx::query_scalar(
                 "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= ? AND status = ?"
@@ -144,8 +140,7 @@ pub async fn home_dashboard(
             .bind(time_cutoff)
             .bind("completed")
             .fetch_one(pool)
-            .await
-            .ok();
+            .await?;
 
             let chart_data = chart_results
                 .iter()
@@ -173,8 +168,7 @@ pub async fn home_dashboard(
                 "SELECT * FROM results ORDER BY created_at DESC LIMIT 5",
             )
             .fetch_all(pool)
-            .await
-            .unwrap_or_default();
+            .await?;
 
             let chart_results: Vec<SpeedTestResult> = sqlx::query_as(
                 "SELECT * FROM results WHERE created_at >= ? AND status = ? ORDER BY created_at ASC"
@@ -182,8 +176,7 @@ pub async fn home_dashboard(
             .bind(time_cutoff)
             .bind("completed")
             .fetch_all(pool)
-            .await
-            .unwrap_or_default();
+            .await?;
 
             let total: i64 = sqlx::query_scalar(
                 "SELECT COUNT(*) FROM results WHERE created_at >= ? AND status = ?",
@@ -191,8 +184,7 @@ pub async fn home_dashboard(
             .bind(time_cutoff)
             .bind("completed")
             .fetch_one(pool)
-            .await
-            .unwrap_or(0);
+            .await?;
 
             let avg_download: Option<f64> = sqlx::query_scalar(
                 "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= ? AND status = ?"
@@ -200,8 +192,7 @@ pub async fn home_dashboard(
             .bind(time_cutoff)
             .bind("completed")
             .fetch_one(pool)
-            .await
-            .ok();
+            .await?;
 
             let avg_upload: Option<f64> = sqlx::query_scalar(
                 "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= ? AND status = ?"
@@ -209,8 +200,7 @@ pub async fn home_dashboard(
             .bind(time_cutoff)
             .bind("completed")
             .fetch_one(pool)
-            .await
-            .ok();
+            .await?;
 
             let avg_ping: Option<f64> = sqlx::query_scalar(
                 "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= ? AND status = ?"
@@ -218,8 +208,7 @@ pub async fn home_dashboard(
             .bind(time_cutoff)
             .bind("completed")
             .fetch_one(pool)
-            .await
-            .ok();
+            .await?;
 
             let chart_data = chart_results
                 .iter()
@@ -247,8 +236,7 @@ pub async fn home_dashboard(
                 "SELECT * FROM results ORDER BY created_at DESC LIMIT 5",
             )
             .fetch_all(pool)
-            .await
-            .unwrap_or_default();
+            .await?;
 
             let chart_results: Vec<SpeedTestResult> = sqlx::query_as(
                 "SELECT * FROM results WHERE created_at >= $1 AND status = $2 ORDER BY created_at ASC"
@@ -256,8 +244,7 @@ pub async fn home_dashboard(
             .bind(time_cutoff)
             .bind("completed")
             .fetch_all(pool)
-            .await
-            .unwrap_or_default();
+            .await?;
 
             let total: i64 = sqlx::query_scalar(
                 "SELECT COUNT(*) FROM results WHERE created_at >= $1 AND status = $2",
@@ -265,8 +252,7 @@ pub async fn home_dashboard(
             .bind(time_cutoff)
             .bind("completed")
             .fetch_one(pool)
-            .await
-            .unwrap_or(0);
+            .await?;
 
             let avg_download: Option<f64> = sqlx::query_scalar(
                 "SELECT AVG(download) FROM results WHERE download IS NOT NULL AND created_at >= $1 AND status = $2"
@@ -274,8 +260,7 @@ pub async fn home_dashboard(
             .bind(time_cutoff)
             .bind("completed")
             .fetch_one(pool)
-            .await
-            .ok();
+            .await?;
 
             let avg_upload: Option<f64> = sqlx::query_scalar(
                 "SELECT AVG(upload) FROM results WHERE upload IS NOT NULL AND created_at >= $1 AND status = $2"
@@ -283,8 +268,7 @@ pub async fn home_dashboard(
             .bind(time_cutoff)
             .bind("completed")
             .fetch_one(pool)
-            .await
-            .ok();
+            .await?;
 
             let avg_ping: Option<f64> = sqlx::query_scalar(
                 "SELECT AVG(ping) FROM results WHERE ping IS NOT NULL AND created_at >= $1 AND status = $2"
@@ -292,8 +276,7 @@ pub async fn home_dashboard(
             .bind(time_cutoff)
             .bind("completed")
             .fetch_one(pool)
-            .await
-            .ok();
+            .await?;
 
             let chart_data = chart_results
                 .iter()
@@ -320,21 +303,12 @@ pub async fn home_dashboard(
     let next_speedtest = get_next_scheduled_test();
     let is_authenticated = crate::session::get_user_id(session).await.is_some();
 
-    let template = HomeDashboardTemplate {
+    Ok(HtmlTemplate(HomeDashboardTemplate {
         locale: locale.0,
         latest_results,
         stats,
         time_range: params.range.clone(),
         next_speedtest,
         is_authenticated,
-    };
-
-    match template.render() {
-        Ok(html) => Html(html).into_response(),
-        Err(err) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            err.to_string(),
-        )
-            .into_response(),
-    }
+    }))
 }

@@ -3004,6 +3004,7 @@ dependencies = [
 name = "speedtest-tracker"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "askama",
  "assert_float_eq",
  "async-trait",

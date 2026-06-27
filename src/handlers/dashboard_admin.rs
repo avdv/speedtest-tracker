@@ -1,10 +1,8 @@
+use crate::error::{AppError, HtmlTemplate};
 use crate::locale_middleware::Locale;
 use crate::{db::Database, filters, models::Result as SpeedTestResult, AppState};
 use askama::Template;
-use axum::{
-    extract::State,
-    response::{Html, IntoResponse, Response},
-};
+use axum::{extract::State, response::IntoResponse};
 
 #[derive(Template)]
 #[template(path = "pages/admin.html")]
@@ -21,7 +19,10 @@ pub struct AdminStats {
     pub avg_upload: f64,
     pub avg_ping: f64,
 }
-pub async fn admin_dashboard(State(state): State<AppState>, locale: Locale) -> Response {
+pub async fn admin_dashboard(
+    State(state): State<AppState>,
+    locale: Locale,
+) -> Result<impl IntoResponse, AppError> {
     let (latest_result, stats) = match &state.db {
         #[cfg(feature = "sqlite")]
         Database::Sqlite(pool) => {
@@ -29,32 +30,26 @@ pub async fn admin_dashboard(State(state): State<AppState>, locale: Locale) -> R
                 "SELECT * FROM results ORDER BY created_at DESC LIMIT 1",
             )
             .fetch_optional(pool)
-            .await
-            .ok()
-            .flatten();
+            .await?;
 
             let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
                 .fetch_one(pool)
-                .await
-                .unwrap_or(0);
+                .await?;
 
             let avg_download: Option<f64> =
                 sqlx::query_scalar("SELECT AVG(download) FROM results WHERE download IS NOT NULL")
                     .fetch_one(pool)
-                    .await
-                    .ok();
+                    .await?;
 
             let avg_upload: Option<f64> =
                 sqlx::query_scalar("SELECT AVG(upload) FROM results WHERE upload IS NOT NULL")
                     .fetch_one(pool)
-                    .await
-                    .ok();
+                    .await?;
 
             let avg_ping: Option<f64> =
                 sqlx::query_scalar("SELECT AVG(ping) FROM results WHERE ping IS NOT NULL")
                     .fetch_one(pool)
-                    .await
-                    .ok();
+                    .await?;
 
             let stats = AdminStats {
                 total_tests: total,
@@ -71,32 +66,26 @@ pub async fn admin_dashboard(State(state): State<AppState>, locale: Locale) -> R
                 "SELECT * FROM results ORDER BY created_at DESC LIMIT 1",
             )
             .fetch_optional(pool)
-            .await
-            .ok()
-            .flatten();
+            .await?;
 
             let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
                 .fetch_one(pool)
-                .await
-                .unwrap_or(0);
+                .await?;
 
             let avg_download: Option<f64> =
                 sqlx::query_scalar("SELECT AVG(download) FROM results WHERE download IS NOT NULL")
                     .fetch_one(pool)
-                    .await
-                    .ok();
+                    .await?;
 
             let avg_upload: Option<f64> =
                 sqlx::query_scalar("SELECT AVG(upload) FROM results WHERE upload IS NOT NULL")
                     .fetch_one(pool)
-                    .await
-                    .ok();
+                    .await?;
 
             let avg_ping: Option<f64> =
                 sqlx::query_scalar("SELECT AVG(ping) FROM results WHERE ping IS NOT NULL")
                     .fetch_one(pool)
-                    .await
-                    .ok();
+                    .await?;
 
             let stats = AdminStats {
                 total_tests: total,
@@ -113,32 +102,26 @@ pub async fn admin_dashboard(State(state): State<AppState>, locale: Locale) -> R
                 "SELECT * FROM results ORDER BY created_at DESC LIMIT 1",
             )
             .fetch_optional(pool)
-            .await
-            .ok()
-            .flatten();
+            .await?;
 
             let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
                 .fetch_one(pool)
-                .await
-                .unwrap_or(0);
+                .await?;
 
             let avg_download: Option<f64> =
                 sqlx::query_scalar("SELECT AVG(download) FROM results WHERE download IS NOT NULL")
                     .fetch_one(pool)
-                    .await
-                    .ok();
+                    .await?;
 
             let avg_upload: Option<f64> =
                 sqlx::query_scalar("SELECT AVG(upload) FROM results WHERE upload IS NOT NULL")
                     .fetch_one(pool)
-                    .await
-                    .ok();
+                    .await?;
 
             let avg_ping: Option<f64> =
                 sqlx::query_scalar("SELECT AVG(ping) FROM results WHERE ping IS NOT NULL")
                     .fetch_one(pool)
-                    .await
-                    .ok();
+                    .await?;
 
             let stats = AdminStats {
                 total_tests: total,
@@ -151,19 +134,10 @@ pub async fn admin_dashboard(State(state): State<AppState>, locale: Locale) -> R
         }
     };
 
-    let template = AdminDashboardTemplate {
+    Ok(HtmlTemplate(AdminDashboardTemplate {
         locale: locale.0,
         stats,
         latest_result,
         is_authenticated: true,
-    };
-
-    match template.render() {
-        Ok(html) => Html(html).into_response(),
-        Err(err) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            err.to_string(),
-        )
-            .into_response(),
-    }
+    }))
 }

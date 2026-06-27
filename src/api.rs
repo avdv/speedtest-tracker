@@ -1,8 +1,9 @@
+use crate::error::AppError;
 use crate::{db::Database, models::Result as SpeedTestResult, AppState};
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
-    response::{IntoResponse, Json},
+    response::{IntoResponse, Json, Response},
 };
 use serde::{Deserialize, Serialize};
 
@@ -139,41 +140,35 @@ pub async fn healthcheck() -> Json<ApiResponse<()>> {
 }
 
 // GET /api/speedtest/latest (legacy v0 endpoint)
-pub async fn legacy_latest(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn legacy_latest(State(state): State<AppState>) -> Result<Response, AppError> {
     let result = match &state.db {
         #[cfg(feature = "sqlite")]
-
         Database::Sqlite(pool) => {
             sqlx::query_as::<_, SpeedTestResult>(
                 "SELECT * FROM results WHERE status IN ('completed', 'failed') ORDER BY created_at DESC LIMIT 1"
             )
             .fetch_optional(pool)
-            .await
-            .expect("fetched one result")
+            .await?
         },
         #[cfg(feature = "mysql")]
-
         Database::MySql(pool) => {
             sqlx::query_as::<_, SpeedTestResult>(
                 "SELECT * FROM results WHERE status IN ('completed', 'failed') ORDER BY created_at DESC LIMIT 1"
             )
             .fetch_optional(pool)
-            .await
-            .expect("fetched one result")
+            .await?
         },
         #[cfg(feature = "postgres")]
-
         Database::Postgres(pool) => {
             sqlx::query_as::<_, SpeedTestResult>(
                 "SELECT * FROM results WHERE status IN ('completed', 'failed') ORDER BY created_at DESC LIMIT 1"
             )
             .fetch_optional(pool)
-            .await
-            .expect("fetched one result")
+            .await?
         },
     };
 
-    if let Some(r) = result {
+    let response = if let Some(r) = result {
         // Parse server info from data JSON if available
         let (server_id, server_host, server_name, result_url) = r
             .data
@@ -195,7 +190,7 @@ pub async fn legacy_latest(State(state): State<AppState>) -> impl IntoResponse {
             })
             .unwrap_or((None, None, None, None));
 
-        let response = serde_json::json!({
+        let body = serde_json::json!({
             "message": "ok",
             "data": {
                 "id": r.id,
@@ -212,20 +207,17 @@ pub async fn legacy_latest(State(state): State<AppState>) -> impl IntoResponse {
                 "updated_at": r.updated_at.format("%Y-%m-%dT%H:%M:%S").to_string(),
             }
         });
-        (StatusCode::OK, Json(response))
+        (StatusCode::OK, Json(body)).into_response()
     } else {
-        let response = serde_json::json!({
-            "message": "No results found."
-        });
-        (StatusCode::NOT_FOUND, Json(response))
-    }
+        let body = serde_json::json!({ "message": "No results found." });
+        (StatusCode::NOT_FOUND, Json(body)).into_response()
+    };
+    Ok(response)
 }
-
-// GET /api/v1/results
 pub async fn list_results(
     State(state): State<AppState>,
     Query(params): Query<ListQuery>,
-) -> Json<PaginatedResults> {
+) -> Result<Json<PaginatedResults>, AppError> {
     let offset = (params.page - 1) * params.per_page;
 
     let (results, total) = match &state.db {
@@ -237,13 +229,11 @@ pub async fn list_results(
             .bind(params.per_page)
             .bind(offset)
             .fetch_all(pool)
-            .await
-            .unwrap_or_default();
+            .await?;
 
             let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
                 .fetch_one(pool)
-                .await
-                .unwrap_or(0);
+                .await?;
 
             (results, total)
         }
@@ -255,13 +245,11 @@ pub async fn list_results(
             .bind(params.per_page)
             .bind(offset)
             .fetch_all(pool)
-            .await
-            .unwrap_or_default();
+            .await?;
 
             let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
                 .fetch_one(pool)
-                .await
-                .unwrap_or(0);
+                .await?;
 
             (results, total)
         }
@@ -273,109 +261,112 @@ pub async fn list_results(
             .bind(params.per_page)
             .bind(offset)
             .fetch_all(pool)
-            .await
-            .unwrap_or_default();
+            .await?;
 
             let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM results")
                 .fetch_one(pool)
-                .await
-                .unwrap_or(0);
+                .await?;
 
             (results, total)
         }
     };
 
-    Json(PaginatedResults {
+    Ok(Json(PaginatedResults {
         data: results.into_iter().map(Into::into).collect(),
         page: params.page,
         per_page: params.per_page,
         total,
-    })
+    }))
 }
 
 // GET /api/v1/results/latest
-pub async fn latest_result(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn latest_result(State(state): State<AppState>) -> Result<Response, AppError> {
     let result = match &state.db {
         #[cfg(feature = "sqlite")]
-        Database::Sqlite(pool) => sqlx::query_as::<_, SpeedTestResult>(
-            "SELECT * FROM results ORDER BY created_at DESC LIMIT 1",
-        )
-        .fetch_optional(pool)
-        .await
-        .expect("fetch latest result"),
+        Database::Sqlite(pool) => {
+            sqlx::query_as::<_, SpeedTestResult>(
+                "SELECT * FROM results ORDER BY created_at DESC LIMIT 1",
+            )
+            .fetch_optional(pool)
+            .await?
+        }
         #[cfg(feature = "mysql")]
-        Database::MySql(pool) => sqlx::query_as::<_, SpeedTestResult>(
-            "SELECT * FROM results ORDER BY created_at DESC LIMIT 1",
-        )
-        .fetch_optional(pool)
-        .await
-        .expect("fetch latest result"),
+        Database::MySql(pool) => {
+            sqlx::query_as::<_, SpeedTestResult>(
+                "SELECT * FROM results ORDER BY created_at DESC LIMIT 1",
+            )
+            .fetch_optional(pool)
+            .await?
+        }
         #[cfg(feature = "postgres")]
-        Database::Postgres(pool) => sqlx::query_as::<_, SpeedTestResult>(
-            "SELECT * FROM results ORDER BY created_at DESC LIMIT 1",
-        )
-        .fetch_optional(pool)
-        .await
-        .expect("fetch latest result"),
+        Database::Postgres(pool) => {
+            sqlx::query_as::<_, SpeedTestResult>(
+                "SELECT * FROM results ORDER BY created_at DESC LIMIT 1",
+            )
+            .fetch_optional(pool)
+            .await?
+        }
     };
 
-    if let Some(r) = result {
+    let response = if let Some(r) = result {
         let response = ApiResponse {
             data: Some(ResultResponse::from(r)),
             message: "Success".to_string(),
         };
-        (StatusCode::OK, Json(response))
+        (StatusCode::OK, Json(response)).into_response()
     } else {
         let response: ApiResponse<ResultResponse> = ApiResponse {
             data: None,
             message: "No results found.".to_string(),
         };
-        (StatusCode::NOT_FOUND, Json(response))
-    }
+        (StatusCode::NOT_FOUND, Json(response)).into_response()
+    };
+    Ok(response)
 }
 
 // GET /api/v1/results/{id}
-pub async fn get_result(State(state): State<AppState>, Path(id): Path<i64>) -> impl IntoResponse {
+pub async fn get_result(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+) -> Result<Response, AppError> {
     let result = match &state.db {
         #[cfg(feature = "sqlite")]
         Database::Sqlite(pool) => {
             sqlx::query_as::<_, SpeedTestResult>("SELECT * FROM results WHERE id = ?")
                 .bind(id)
                 .fetch_optional(pool)
-                .await
-                .expect("fetch a result")
+                .await?
         }
         #[cfg(feature = "mysql")]
         Database::MySql(pool) => {
             sqlx::query_as::<_, SpeedTestResult>("SELECT * FROM results WHERE id = ?")
                 .bind(id)
                 .fetch_optional(pool)
-                .await
-                .expect("fetch a result")
+                .await?
         }
         #[cfg(feature = "postgres")]
         Database::Postgres(pool) => {
             sqlx::query_as::<_, SpeedTestResult>("SELECT * FROM results WHERE id = $1")
                 .bind(id)
                 .fetch_optional(pool)
-                .await
-                .expect("fetch a result")
+                .await?
         }
     };
 
-    if let Some(r) = result {
+    let response = if let Some(r) = result {
         let response = ApiResponse {
             data: Some(ResultResponse::from(r)),
             message: "Success".to_string(),
         };
-        (StatusCode::OK, Json(response))
+        (StatusCode::OK, Json(response)).into_response()
     } else {
         let response: ApiResponse<ResultResponse> = ApiResponse {
             data: None,
             message: "Result not found.".to_string(),
         };
-        (StatusCode::NOT_FOUND, Json(response))
-    }
+        (StatusCode::NOT_FOUND, Json(response)).into_response()
+    };
+    Ok(response)
 }
 
 #[derive(Serialize)]
@@ -434,8 +425,10 @@ struct StatsRow {
 }
 
 // GET /api/v1/stats
-pub async fn get_stats(State(state): State<AppState>) -> Json<ApiResponse<StatsResponse>> {
-    let query = match &state.db {
+pub async fn get_stats(
+    State(state): State<AppState>,
+) -> Result<Json<ApiResponse<StatsResponse>>, AppError> {
+    let row = match &state.db {
         #[cfg(feature = "sqlite")]
         Database::Sqlite(pool) => {
             sqlx::query_as::<_, StatsRow>(
@@ -453,7 +446,7 @@ pub async fn get_stats(State(state): State<AppState>) -> Json<ApiResponse<StatsR
                 FROM results",
             )
             .fetch_one(pool)
-            .await
+            .await?
         }
         #[cfg(feature = "mysql")]
         Database::MySql(pool) => {
@@ -472,7 +465,7 @@ pub async fn get_stats(State(state): State<AppState>) -> Json<ApiResponse<StatsR
                 FROM results",
             )
             .fetch_one(pool)
-            .await
+            .await?
         }
         #[cfg(feature = "postgres")]
         Database::Postgres(pool) => {
@@ -491,34 +484,15 @@ pub async fn get_stats(State(state): State<AppState>) -> Json<ApiResponse<StatsR
                 FROM results",
             )
             .fetch_one(pool)
-            .await
+            .await?
         }
     };
-    let row = match query {
-        Ok(r) => {
-            tracing::debug!(
-                "Stats query successful: total={}, avg_download={:?}",
-                r.total_results,
-                r.avg_download
-            );
-            r
-        }
-        Err(e) => {
-            tracing::error!("Stats query failed: {}", e);
-            StatsRow {
-                total_results: 0,
-                avg_ping: None,
-                avg_download: None,
-                avg_upload: None,
-                min_ping: None,
-                min_download: None,
-                min_upload: None,
-                max_ping: None,
-                max_download: None,
-                max_upload: None,
-            }
-        }
-    };
+
+    tracing::debug!(
+        "Stats query successful: total={}, avg_download={:?}",
+        row.total_results,
+        row.avg_download
+    );
 
     let avg_download = row.avg_download.unwrap_or(0.0).round() as i64;
     let min_download = row.min_download.unwrap_or(0.0).round() as i64;
@@ -558,10 +532,10 @@ pub async fn get_stats(State(state): State<AppState>) -> Json<ApiResponse<StatsR
         },
     };
 
-    Json(ApiResponse {
+    Ok(Json(ApiResponse {
         data: Some(stats),
         message: "ok".to_string(),
-    })
+    }))
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -645,91 +619,57 @@ pub struct RunSpeedtestRequest {
 pub async fn run_speedtest_api(
     State(state): State<AppState>,
     Json(payload): Json<RunSpeedtestRequest>,
-) -> impl IntoResponse {
+) -> Result<Response, AppError> {
     tracing::info!(
         "API speedtest requested with server_id: {:?}",
         payload.server_id
     );
 
-    // Run speedtest
-    let result = match crate::speedtest::run_speedtest(payload.server_id).await {
-        Ok(r) => r,
-        Err(e) => {
+    let result = crate::speedtest::run_speedtest(payload.server_id)
+        .await
+        .map_err(|e| {
             tracing::error!("Speedtest execution failed: {}", e);
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<()> {
-                    data: None,
-                    message: format!("Speedtest failed: {e}"),
-                }),
-            )
-                .into_response();
-        }
-    };
+            AppError::from(anyhow::anyhow!("Speedtest failed: {e}"))
+        })?;
 
-    // Save to database
-    let result_id = match crate::speedtest::save_result(&state.db, result, false).await {
-        Ok(id) => id,
-        Err(e) => {
+    let result_id = crate::speedtest::save_result(&state.db, result, false)
+        .await
+        .map_err(|e| {
             tracing::error!("Failed to save speedtest result: {}", e);
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<()> {
-                    data: None,
-                    message: format!("Test completed but failed to save: {e}"),
-                }),
-            )
-                .into_response();
-        }
-    };
+            AppError::from(anyhow::anyhow!("Test completed but failed to save: {e}"))
+        })?;
 
-    // Fetch the saved result to return
     let saved_result = match &state.db {
         #[cfg(feature = "sqlite")]
         Database::Sqlite(pool) => {
             sqlx::query_as::<_, SpeedTestResult>("SELECT * FROM results WHERE id = ?")
                 .bind(result_id)
                 .fetch_one(pool)
-                .await
+                .await?
         }
         #[cfg(feature = "mysql")]
         Database::MySql(pool) => {
             sqlx::query_as::<_, SpeedTestResult>("SELECT * FROM results WHERE id = ?")
                 .bind(result_id)
                 .fetch_one(pool)
-                .await
+                .await?
         }
         #[cfg(feature = "postgres")]
         Database::Postgres(pool) => {
             sqlx::query_as::<_, SpeedTestResult>("SELECT * FROM results WHERE id = $1")
                 .bind(result_id)
                 .fetch_one(pool)
-                .await
+                .await?
         }
     };
 
-    match saved_result {
-        Ok(result) => {
-            tracing::info!("Speedtest completed and saved with id: {}", result_id);
-            (
-                StatusCode::CREATED,
-                Json(ApiResponse {
-                    data: Some(ResultResponse::from(result)),
-                    message: "Speedtest completed successfully".to_string(),
-                }),
-            )
-                .into_response()
-        }
-        Err(e) => {
-            tracing::error!("Failed to fetch saved result: {}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<()> {
-                    data: None,
-                    message: format!("Test saved but failed to retrieve: {e}"),
-                }),
-            )
-                .into_response()
-        }
-    }
+    tracing::info!("Speedtest completed and saved with id: {}", result_id);
+    Ok((
+        StatusCode::CREATED,
+        Json(ApiResponse {
+            data: Some(ResultResponse::from(saved_result)),
+            message: "Speedtest completed successfully".to_string(),
+        }),
+    )
+        .into_response())
 }
