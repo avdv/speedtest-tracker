@@ -1,11 +1,4 @@
 // Import all modules from the library
-#![warn(
-    clippy::uninlined_format_args,
-    clippy::unreadable_literal,
-    clippy::unused_async,
-    clippy::manual_let_else,
-    clippy::match_same_arms,
-)]
 use speedtest_tracker::{db, locale_middleware, scheduler, AppState};
 
 rust_i18n::i18n!("locales", fallback = "en");
