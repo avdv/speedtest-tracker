@@ -14,7 +14,10 @@ async fn setup_test_app(test_name: &str) -> TestServer {
     // Set up test database URL (in-memory SQLite for tests)
     let database_url: String = format!("sqlite:file:{test_name}?mode=memory&cache=shared");
 
-    env::set_var("SESSION_SECRET", "test-secret-key-32-characters!!");
+    unsafe {
+        // FIXME
+        env::set_var("SESSION_SECRET", "test-secret-key-32-characters!!");
+    }
 
     // Create database connection
     let db = Database::connect(&database_url)
@@ -154,7 +157,7 @@ mod api_endpoint_tests {
                 .as_number()
                 .and_then(|f| f.as_f64())
                 .unwrap(),
-            987.654312
+            987.654_312
         ); // Converted to Mbps
         assert_eq!(json["data"]["upload"], 50.2); // Converted to Mbps
     }
@@ -199,7 +202,7 @@ mod api_endpoint_tests {
             .get("/api/v1/results")
             .add_header(
                 HeaderName::from_static("authorization"),
-                HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
+                HeaderValue::from_str(&format!("Bearer {token}")).unwrap(),
             )
             .await;
 
@@ -226,7 +229,7 @@ mod api_endpoint_tests {
             .get("/api/v1/results/latest")
             .add_header(
                 HeaderName::from_static("authorization"),
-                HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
+                HeaderValue::from_str(&format!("Bearer {token}")).unwrap(),
             )
             .await;
 
@@ -262,7 +265,7 @@ mod api_endpoint_tests {
             .get("/api/v1/results/99999")
             .add_header(
                 HeaderName::from_static("authorization"),
-                HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
+                HeaderValue::from_str(&format!("Bearer {token}")).unwrap(),
             )
             .await;
 
@@ -280,10 +283,10 @@ mod api_endpoint_tests {
         let server = TestServer::new(app);
 
         let response = server
-            .get(&format!("/api/v1/results/{}", result_id))
+            .get(&format!("/api/v1/results/{result_id}"))
             .add_header(
                 HeaderName::from_static("authorization"),
-                HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
+                HeaderValue::from_str(&format!("Bearer {token}")).unwrap(),
             )
             .await;
 
@@ -319,7 +322,7 @@ mod api_endpoint_tests {
             .get("/api/v1/stats")
             .add_header(
                 HeaderName::from_static("authorization"),
-                HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
+                HeaderValue::from_str(&format!("Bearer {token}")).unwrap(),
             )
             .await;
 
@@ -360,7 +363,7 @@ mod api_endpoint_tests {
             .get("/api/v1/results?page=1&per_page=5")
             .add_header(
                 HeaderName::from_static("authorization"),
-                HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
+                HeaderValue::from_str(&format!("Bearer {token}")).unwrap(),
             )
             .await;
 
@@ -401,7 +404,7 @@ mod api_endpoint_tests {
             .get("/api/v1/results")
             .add_header(
                 HeaderName::from_static("authorization"),
-                HeaderValue::from_str(&format!("bearer {}", token)).unwrap(),
+                HeaderValue::from_str(&format!("bearer {token}")).unwrap(),
             )
             .await;
 
@@ -422,7 +425,7 @@ mod api_endpoint_tests {
             .get("/api/v1/results")
             .add_header(
                 HeaderName::from_static("authorization"),
-                HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
+                HeaderValue::from_str(&format!("Bearer {token}")).unwrap(),
             )
             .await;
 
