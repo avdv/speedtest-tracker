@@ -1,11 +1,11 @@
 use crate::error::{AppError, HtmlTemplate};
 use crate::locale_middleware::Locale;
-use crate::{db::Database, filters, models::PersonalAccessToken, AppState};
+use crate::{AppState, db::Database, filters, models::PersonalAccessToken};
 use askama::Template;
 use axum::{
+    Form,
     extract::{Query, State},
     response::{IntoResponse, Redirect, Response},
-    Form,
 };
 use rand::RngExt;
 use serde::Deserialize;

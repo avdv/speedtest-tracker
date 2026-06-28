@@ -1,9 +1,9 @@
 use assert_float_eq::assert_float_absolute_eq;
-use axum_test::http::{HeaderName, HeaderValue};
 use axum_test::TestServer;
+use axum_test::http::{HeaderName, HeaderValue};
 use serde_json::Value;
 use sha2::Digest;
-use speedtest_tracker::{create_app, AppState, Database};
+use speedtest_tracker::{AppState, Database, create_app};
 use std::env;
 
 #[cfg(not(feature = "sqlite"))]

@@ -1,11 +1,11 @@
 use crate::error::{AppError, HtmlTemplate};
 use crate::locale_middleware::Locale;
-use crate::{db::Database, filters, AppState};
+use crate::{AppState, db::Database, filters};
 use askama::Template;
 use axum::{
+    Form,
     extract::State,
     response::{IntoResponse, Redirect, Response},
-    Form,
 };
 use serde::Deserialize;
 

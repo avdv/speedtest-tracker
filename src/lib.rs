@@ -20,11 +20,11 @@ pub use db::Database;
 
 use axum::http::StatusCode;
 use axum::{
+    Router,
     extract::Request,
     middleware::{self, Next},
     response::{Json, Response},
     routing::{get, post},
-    Router,
 };
 use tower_http::trace::TraceLayer;
 

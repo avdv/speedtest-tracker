@@ -1,7 +1,7 @@
 /// Middleware for locale detection and i18n setup
 use axum::{
     extract::{FromRequestParts, Request},
-    http::{request::Parts, HeaderMap, StatusCode},
+    http::{HeaderMap, StatusCode, request::Parts},
     middleware::Next,
     response::Response,
 };

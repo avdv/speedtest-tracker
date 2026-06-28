@@ -1,18 +1,18 @@
 use axum::{
+    Json,
     extract::{FromRequestParts, Request, State},
-    http::{request::Parts, StatusCode},
+    http::{StatusCode, request::Parts},
     middleware::Next,
     response::Response,
-    Json,
 };
 use axum_extra::{
-    headers::{authorization::Bearer, Authorization},
     TypedHeader,
+    headers::{Authorization, authorization::Bearer},
 };
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
-use crate::{db::Database, models::PersonalAccessToken, AppState};
+use crate::{AppState, db::Database, models::PersonalAccessToken};
 
 #[derive(Serialize)]
 pub struct ErrorResponse {

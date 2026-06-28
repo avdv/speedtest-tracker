@@ -116,12 +116,13 @@ fn hash_templates_recursive(dir: &str, hasher: &mut DefaultHasher) {
                     hash_templates_recursive(path_str, hasher);
                 }
             } else if path.extension().is_some_and(|ext| ext == "html")
-                && let Ok(mut file) = fs::File::open(&path) {
-                    let mut contents = Vec::new();
-                    if file.read_to_end(&mut contents).is_ok() {
-                        contents.hash(hasher);
-                    }
+                && let Ok(mut file) = fs::File::open(&path)
+            {
+                let mut contents = Vec::new();
+                if file.read_to_end(&mut contents).is_ok() {
+                    contents.hash(hasher);
                 }
+            }
         }
     }
 }

@@ -1,10 +1,10 @@
 use axum::{
     extract::Path,
     http::HeaderMap,
-    http::{header::REFERER, Uri},
+    http::{Uri, header::REFERER},
     response::{IntoResponse, Redirect},
 };
-use axum_extra::extract::{cookie::Cookie, CookieJar};
+use axum_extra::extract::{CookieJar, cookie::Cookie};
 
 /// Handle language change requests
 /// Route: GET /set-language/:locale

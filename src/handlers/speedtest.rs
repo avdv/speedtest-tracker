@@ -1,12 +1,12 @@
 use crate::error::{AppError, HtmlTemplate};
 use crate::locale_middleware::Locale;
-use crate::{db::Database, filters, models::Result as SpeedTestResult, AppState};
+use crate::{AppState, db::Database, filters, models::Result as SpeedTestResult};
 use askama::Template;
 use axum::{
+    Form, Json,
     extract::State,
     http::StatusCode,
     response::{IntoResponse, Response},
-    Form, Json,
 };
 
 #[derive(Template)]
