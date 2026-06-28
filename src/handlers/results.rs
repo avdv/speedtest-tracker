@@ -1,11 +1,11 @@
 use crate::error::{AppError, HtmlTemplate};
 use crate::locale_middleware::Locale;
-use crate::{db::Database, filters, models::Result as SpeedTestResult, AppState};
+use crate::{AppState, db::Database, filters, models::Result as SpeedTestResult};
 use askama::Template;
 use axum::{
+    Form,
     extract::{Query, State},
     response::{IntoResponse, Redirect},
-    Form,
 };
 use serde::Deserialize;
 

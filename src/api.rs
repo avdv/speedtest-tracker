@@ -1,5 +1,5 @@
 use crate::error::AppError;
-use crate::{db::Database, models::Result as SpeedTestResult, AppState};
+use crate::{AppState, db::Database, models::Result as SpeedTestResult};
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
