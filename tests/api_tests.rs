@@ -6,6 +6,9 @@ use sha2::Digest;
 use speedtest_tracker::{create_app, AppState, Database};
 use std::env;
 
+#[cfg(not(feature = "sqlite"))]
+compile_error!("Tests require feature `sqlite` to be enabled.");
+
 /// Helper function to create a test database and app state
 async fn setup_test_app(test_name: &str) -> TestServer {
     // Set up test database URL (in-memory SQLite for tests)
@@ -59,7 +62,6 @@ async fn create_test_result(state: &AppState) -> i64 {
     "#;
 
     match &state.db {
-        #[cfg(feature = "sqlite")]
         Database::Sqlite(pool) => {
             let effected = sqlx::query(query)
                 .execute(pool)
@@ -84,7 +86,6 @@ async fn create_test_token(state: &AppState, abilities: &str) -> String {
     "#;
 
     match &state.db {
-        #[cfg(feature = "sqlite")]
         Database::Sqlite(pool) => {
             sqlx::query(query)
                 .bind(&token_hash)
