@@ -50,8 +50,8 @@ where
             );
 
             // Add Last-Modified if available
-            if let Some(last_modified) = content.metadata.last_modified() {
-                if let Some(system_time) =
+            if let Some(last_modified) = content.metadata.last_modified()
+                && let Some(system_time) =
                     std::time::UNIX_EPOCH.checked_add(std::time::Duration::from_secs(last_modified))
                 {
                     let datetime = httpdate::fmt_http_date(system_time);
@@ -60,7 +60,6 @@ where
                         HeaderValue::from_str(&datetime).unwrap(),
                     );
                 }
-            }
 
             builder.body(Body::from(content.data)).unwrap()
         }

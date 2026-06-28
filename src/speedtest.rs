@@ -201,7 +201,7 @@ pub async fn save_result(
             .bind(scheduled)
             .execute(pool)
             .await
-            .map_err(|e| format!("Failed to save result: {}", e))?
+            .map_err(|e| format!("Failed to save result: {e}"))?
             .last_insert_id() as i64
         },
         #[cfg(feature = "postgres")]
@@ -223,7 +223,7 @@ pub async fn save_result(
             .bind(scheduled)
             .fetch_one(pool)
             .await
-            .map_err(|e| format!("Failed to save result: {}", e))?
+            .map_err(|e| format!("Failed to save result: {e}"))?
         },
     };
 
