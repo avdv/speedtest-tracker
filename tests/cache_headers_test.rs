@@ -79,8 +79,7 @@ async fn test_favicon_cache_headers() {
     let ct = content_type.unwrap().to_str().unwrap();
     assert!(
         ct == "image/x-icon" || ct == "image/vnd.microsoft.icon",
-        "Content-Type should be a valid icon MIME type, got: {}",
-        ct
+        "Content-Type should be a valid icon MIME type, got: {ct}"
     );
 }
 
