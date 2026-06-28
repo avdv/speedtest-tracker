@@ -221,6 +221,11 @@
               actionlint.enable = true;
               clippy = {
                 enable = true;
+                settings = {
+                  allFeatures = true;
+                  denyWarnings = true;
+                  extraArgs = "--all-targets";
+                };
                 packageOverrides = {
                   inherit (fx.stable) cargo clippy;
                 };
