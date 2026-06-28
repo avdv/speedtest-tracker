@@ -35,11 +35,8 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
-      - name: "Run clippy"
-        run: nix develop -c cargo clippy --all-targets --all-features -- --deny warnings
-
-      - name: "Check formatting"
-        run: nix develop -c cargo fmt --all --check
+      - name: Check flake
+        run: nix flake check
 
   test:
     needs: lint
@@ -93,7 +90,7 @@ jobs:
             os: macos-15
           - target: "x86_64-apple-darwin"
             os: macos-15-intel
-      
+
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -118,7 +115,7 @@ jobs:
 
       - name: Build release binary
         run: nix develop .#${{ matrix.os && 'default' || format('cross-{0}', matrix.target) }} -c cargo build --release
- 
+
       - name: Upload
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -127,4 +124,4 @@ jobs:
           path: |
             target/${{ !matrix.os && matrix.target || '' }}/release/speedtest-tracker
             target/${{ !matrix.os && matrix.target || '' }}/release/create-test-user
-        
+

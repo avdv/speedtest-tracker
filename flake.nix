@@ -7,6 +7,10 @@
     fenix.url = "github:nix-community/fenix";
     fenix.inputs.nixpkgs.follows = "nixpkgs";
     git-hooks.url = "github:cachix/git-hooks.nix";
+    treefmt-nix = {
+      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:numtide/treefmt-nix";
+    };
   };
 
   outputs =
@@ -16,6 +20,7 @@
       flake-utils,
       fenix,
       git-hooks,
+      treefmt-nix,
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -30,6 +35,8 @@
 
         # Collect fenix targets (keys) as a list
         fenixTargets = builtins.attrNames fx.targets;
+
+        treefmtConfig = (treefmt-nix.lib.evalModule (pkgs // { inherit fx; }) ./treefmt.nix).config;
 
         supportedTargets = builtins.filter (t: lib.elem t fenixTargets) [
           # FreeBSD (x86_64 only)
@@ -217,6 +224,12 @@
         checks = {
           pre-commit-check = git-hooks.lib.${system}.run {
             src = ./.;
+            settings = {
+              rust.check.cargoDeps = pkgs.rustPlatform.importCargoLock {
+                lockFile = ./Cargo.lock;
+              };
+              rust.cargoManifestPath = "./Cargo.toml";
+            };
             hooks = {
               actionlint.enable = true;
               clippy = {
@@ -230,13 +243,9 @@
                   inherit (fx.stable) cargo clippy;
                 };
               };
-              nixfmt = {
+              treefmt = {
                 enable = true;
-                package = pkgs.nixfmt;
-              };
-              rustfmt = {
-                enable = true;
-                packageOverrides = { inherit (fx.stable) cargo rustfmt; };
+                packageOverrides.treefmt = treefmtConfig.build.wrapper;
               };
             };
             package = pkgs.prek;
@@ -248,6 +257,7 @@
           default = defaultShell;
         } crossShells;
 
+        formatter = treefmtConfig.build.wrapper;
       }
     );
 }
