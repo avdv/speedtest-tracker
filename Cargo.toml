@@ -68,7 +68,7 @@ match_same_arms = "warn"
 
 [dev-dependencies]
 assert_float_eq = "1.2"
-axum-test = "20"
+axum-test = "21"
 tokio-test = "0.4"
 
 [package.metadata.i18n]
