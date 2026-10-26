@@ -39,7 +39,7 @@ pub async fn run_test_execute(
 ) -> Result<Response, AppError> {
     let server_id = form
         .server_id
-        .and_then(|s| if s.is_empty() { None } else { Some(s) })
+        .filter(|s| !s.is_empty())
         .and_then(|s| s.parse::<i64>().ok());
 
     tracing::info!("Manual speedtest requested with server_id: {:?}", server_id);
