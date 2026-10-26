@@ -94,6 +94,8 @@
                 skip_next=true
               elif [ "''${arg#--target=}" != "$arg" ]; then
                 : # drop --target=*
+              elif [ "$arg" = '-Wl,--fix-cortex-a53-843419' ]; then
+                : # drop unsupported linker arg
               else
                 args+=("$arg")
               fi
