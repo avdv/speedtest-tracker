@@ -42,7 +42,7 @@ sha2 = "0.11"
 hex = "0.4"
 urlencoding = "2.1"
 time = "0.3"
-tower-sessions = "0.14"
+tower-sessions = "0.15"
 tower-sessions-sqlx-store = { version = "0.15", default-features = false }
 async-trait = "0.1"
 tokio-cron-scheduler = "0.15"
