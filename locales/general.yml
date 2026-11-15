@@ -718,13 +718,6 @@ general.date:
   fr_FR: "Date"
   nl_NL: "Datum"
   pt_BR: "Data"
-general.server:
-  de_DE: "Server"
-  en: "Server"
-  es_ES: "Servidor"
-  fr_FR: "Serveur"
-  nl_NL: "Server"
-  pt_BR: "Servidor"
 general.unknown:
   de_DE: "Unbekannt"
   en: "Unknown"
