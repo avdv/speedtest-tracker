@@ -1,0 +1,6 @@
+self-hosted-runner:
+  labels:
+    # actionlint currently does not know about ubuntu-slim nor ubuntu-26.04,
+    # add standard it here, until actionlint is updated
+    - ubuntu-26.04
+    - ubuntu-slim
